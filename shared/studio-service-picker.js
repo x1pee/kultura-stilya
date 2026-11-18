@@ -34,14 +34,21 @@
   source.before(control);
   if (error) control.append(error);
 
+  const popup = document.createElement('div');
+  popup.className = 'studio-service-popup';
+  popup.hidden = true;
   const list = document.createElement('div');
   list.id = 'studio-service-listbox';
   list.className = 'studio-service-list';
   list.setAttribute('role', 'listbox');
-  list.hidden = true;
   list.inert = true;
   list.setAttribute('aria-hidden', 'true');
-  dialog.append(list);
+  const scrollHint = document.createElement('div');
+  scrollHint.className = 'studio-service-scroll-hint';
+  scrollHint.setAttribute('aria-hidden', 'true');
+  scrollHint.hidden = true;
+  popup.append(list, scrollHint);
+  dialog.append(popup);
   if (!label.id) label.id = 'studio-service-label';
   label.htmlFor = trigger.id;
   trigger.setAttribute('aria-labelledby', label.id + ' ' + value.id);
@@ -76,25 +83,39 @@
     expanded = false;
     list.inert = true;
     list.setAttribute('aria-hidden', 'true');
-    list.classList.remove('is-visible');
-    list.style.visibility = '';
+    popup.classList.remove('is-visible');
+    popup.style.visibility = '';
     trigger.setAttribute('aria-expanded', 'false');
     trigger.removeAttribute('aria-activedescendant');
     control.classList.remove('is-open');
     typeahead = '';
-    if (immediate === true || reduced.matches || document.hidden || list.hidden) {
+    if (immediate === true || reduced.matches || document.hidden || popup.hidden) {
       clearTimeout(hideTimer); hideTimer = 0;
-      list.hidden = true;
+      popup.hidden = true;
     } else if (!hideTimer) {
       // CSS reverses the same transition on reopen; only its final hiding is delayed.
-      hideTimer = setTimeout(() => { hideTimer = 0; if (!expanded) list.hidden = true; }, 180);
+      hideTimer = setTimeout(() => { hideTimer = 0; if (!expanded) popup.hidden = true; }, 180);
     }
+  }
+  function updateScrollHint() {
+    if (!expanded || scrollHint.hidden) return;
+    const last = rows[rows.length - 1]?.element;
+    if (!last) return;
+    const remaining = last.offsetTop + last.offsetHeight - list.clientHeight - Math.max(0, list.scrollTop);
+    const direction = remaining > 2 ? 'down' : 'up';
+    if (scrollHint.dataset.direction === direction) return;
+    scrollHint.dataset.direction = direction;
+    scrollHint.textContent = direction === 'down' ? 'Листайте вниз' : 'Листайте вверх';
   }
   function showActive(index, reveal = true) {
     active = index;
     for (const row of rows) row.element.classList.toggle('is-active', row.index === active);
     const row = rows.find(item => item.index === active);
-    if (!row || !expanded) { trigger.removeAttribute('aria-activedescendant'); return; }
+    if (!row || !expanded) {
+      trigger.removeAttribute('aria-activedescendant');
+      updateScrollHint();
+      return;
+    }
     trigger.setAttribute('aria-activedescendant', row.element.id);
     if (!reveal) return;
     // Adjust only the list's own scroll; scrollIntoView would also move the form.
@@ -102,6 +123,7 @@
     const bottom = top + row.element.offsetHeight;
     if (top < list.scrollTop) list.scrollTop = top;
     else if (bottom > list.scrollTop + list.clientHeight) list.scrollTop = bottom - list.clientHeight;
+    updateScrollHint();
   }
   function sync() {
     const options = Array.from(source.options);
@@ -165,32 +187,35 @@
     if (available < 44 || anchor.bottom <= upper || anchor.top >= lower) return false;
     const width = Math.min(anchor.width, box.width - 16);
     const left = Math.max(box.left + 8, Math.min(anchor.left, box.right - width - 8));
-    list.style.width = Math.max(0, width) + 'px';
-    list.style.maxHeight = Math.floor(Math.min(available, Math.max(180, Math.min(260, window.innerHeight * .32)))) + 'px';
-    list.style.left = left - box.left - dialog.clientLeft + dialog.scrollLeft + 'px';
-    const height = list.getBoundingClientRect().height;
+    const maxHeight = Math.floor(Math.min(available, Math.max(180, Math.min(260, window.innerHeight * .32))));
+    popup.style.width = Math.max(0, width) + 'px';
+    popup.style.maxHeight = maxHeight + 'px';
+    popup.style.left = left - box.left - dialog.clientLeft + dialog.scrollLeft + 'px';
+    scrollHint.hidden = true;
+    scrollHint.hidden = maxHeight < 100 || list.scrollHeight - list.clientHeight <= 2;
+    const height = popup.getBoundingClientRect().height;
     const top = down ? anchor.bottom + 7 : anchor.top - 7 - height;
-    list.style.top = Math.max(upper, Math.min(top, lower - height)) - box.top - dialog.clientTop + dialog.scrollTop + 'px';
-    list.dataset.placement = down ? 'below' : 'above';
+    popup.style.top = Math.max(upper, Math.min(top, lower - height)) - box.top - dialog.clientTop + dialog.scrollTop + 'px';
+    popup.dataset.placement = down ? 'below' : 'above';
     return true;
   }
   function open(edge) {
     sync();
     if (!canOpen()) return;
     clearTimeout(hideTimer); hideTimer = 0;
-    const wasHidden = list.hidden;
-    list.hidden = false;
-    list.style.visibility = 'hidden';
+    const wasHidden = popup.hidden;
+    popup.hidden = false;
+    popup.style.visibility = 'hidden';
     if (!position()) { close(true); return; }
     expanded = true;
     list.inert = false;
     list.setAttribute('aria-hidden', 'false');
     trigger.setAttribute('aria-expanded', 'true');
     control.classList.add('is-open');
-    list.style.visibility = '';
+    popup.style.visibility = '';
     // One style flush starts a hidden list from its closed state; reversals need none.
-    if (wasHidden && !reduced.matches) void list.offsetWidth;
-    list.classList.add('is-visible');
+    if (wasHidden && !reduced.matches) void popup.offsetWidth;
+    popup.classList.add('is-visible');
     const enabled = rows.filter(row => !optionDisabled(row.option));
     const initial = edge === 'first' ? enabled[0] : edge === 'last' ? enabled[enabled.length - 1] : enabled.find(row => row.index === source.selectedIndex) || enabled[0];
     showActive(initial?.index ?? -1);
@@ -245,12 +270,13 @@
     if (found) showActive(found.index);
   });
   list.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse') event.preventDefault(); });
+  list.addEventListener('scroll', updateScrollHint, { passive: true });
   list.addEventListener('click', event => {
     const option = event.target.closest('[data-service-index]');
     if (option && list.contains(option)) choose(Number(option.dataset.serviceIndex));
   });
-  document.addEventListener('pointerdown', event => { if (expanded && !control.contains(event.target) && !list.contains(event.target)) close(); }, true);
-  document.addEventListener('focusin', event => { if (expanded && event.target !== source && !control.contains(event.target) && !list.contains(event.target)) close(); });
+  document.addEventListener('pointerdown', event => { if (expanded && !control.contains(event.target) && !popup.contains(event.target)) close(); }, true);
+  document.addEventListener('focusin', event => { if (expanded && event.target !== source && !control.contains(event.target) && !popup.contains(event.target)) close(); });
   dialog.addEventListener('cancel', event => { if (expanded) { event.preventDefault(); event.stopPropagation(); close(); } });
   dialog.addEventListener('close', () => close(true));
   dialog.addEventListener('scroll', close, { passive: true });
