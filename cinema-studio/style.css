@@ -1046,6 +1046,15 @@ html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .stud
 .studio #services .service-rows{padding:0 22px 8px}
 .studio #services .service-row{padding-block:16px;row-gap:10px}
 .studio #services .service-name p{margin-top:5px}
+.studio #works .work-custom{grid-template-columns:minmax(0,1fr) auto;gap:20px}
+/* Keep the gallery aligned with the preceding centered sections, not the wide map. */
+.studio #salon .studio-gallery{max-width:1280px;margin-inline:auto}
+.studio .trust-rating{max-width:none}
+@media(min-width:901px){
+  body.studio[data-studio-hero=cover-left] .hero-content{right:var(--pad)}
+  body.studio[data-studio-hero=cover-left] .hero-bottom{max-width:none;width:100%}
+  body.studio[data-studio-hero=cover-left] .hero-actions{margin-left:auto;justify-content:flex-end}
+}
 
 /* Selection stays on the same baseline; only a fine-pointer hover lifts the card. */
 .studio #directions .direction-card,

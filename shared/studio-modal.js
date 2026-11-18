@@ -67,17 +67,20 @@
   form.addEventListener('reset',()=>queueMicrotask(()=>{referenceDetails.open=false;compactCategory=null;syncCompact(true)}));
   syncCompact();
   // Deliberate choices advance only this dialog; typing never scrolls or moves focus.
-  let progressTimer=0,timeIntent=0,uploadIntent=0;
+  let progressTimer=0,timeIntent=0,uploadIntent=0,manualUntil=0;
   const find=selector=>mount.querySelector(selector);
   const cancelProgress=()=>{clearTimeout(progressTimer);progressTimer=0;};
+  function cancelIntentProgress(){cancelProgress();timeIntent=0;uploadIntent=0;}
+  function interruptProgress(){cancelIntentProgress();manualUntil=performance.now()+450;}
   const visibleBlock=element=>Boolean(element&&!element.hidden&&element.getClientRects().length);
   function detailBlock(){return ['[data-rq-tattoo]','[data-rq-color]','[data-rq-nails]','[data-rq-upload]'].map(find).find(visibleBlock)||find('.rq-contact-column');}
   function progress(resolve,delay=110,source=null){
-    cancelProgress();progressTimer=setTimeout(()=>{
+    cancelProgress();if(performance.now()<manualUntil)return;
+    progressTimer=setTimeout(()=>{
       progressTimer=0;
       if(!dialog.open||dialog.dataset.dialogMotionState==='closing'||document.hidden)return;
       const active=document.activeElement;
-      if([...document.querySelectorAll('dialog[open]')].some(d=>d!==dialog)&&!dialog.contains(active))return;
+      if([...document.querySelectorAll('dialog[open]')].some(d=>d!==dialog))return;
       if(source&&active!==source&&active?.matches('input,select,textarea,[contenteditable=true]'))return;
       const target=typeof resolve==='function'?resolve():resolve;if(!visibleBlock(target))return;
       const box=scroll.getBoundingClientRect(),rect=target.getBoundingClientRect();
@@ -86,11 +89,13 @@
       scroll.scrollTo({top,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
     },delay);
   }
-  mount.addEventListener('kultura:request-selection',()=>progress(()=>find('#rq-service')?.closest('.rq-field'),260));
-  form.addEventListener('change',event=>{if(event.target.id==='rq-service'&&event.target.value!=='')progress(()=>find('.sb'),110,event.target);});
+  mount.addEventListener('kultura:request-selection',event=>{timeIntent=0;uploadIntent=0;manualUntil=0;progress(()=>event.detail?.serviceId?find('.sb'):find('#rq-service')?.closest('.rq-field'),260);});
+  form.addEventListener('change',event=>{if(event.target.id==='rq-service'){cancelIntentProgress();manualUntil=0;if(event.target.value!=='')progress(()=>find('.sb'),110,event.target);}});
+  form.addEventListener('input',cancelIntentProgress);
+  form.addEventListener('focusin',event=>{if(event.target.matches('input,select,textarea,[contenteditable=true]'))cancelIntentProgress();});
   form.addEventListener('click',event=>{
-    if(event.target.closest('[data-rq-category]'))progress(()=>find('#rq-service')?.closest('.rq-field'));
-    else if(event.target.closest('.sb-person'))progress(()=>find('[data-sb-widget]')||find('[data-sb-content]'));
+    if(event.target.closest('[data-rq-category]')){cancelIntentProgress();manualUntil=0;progress(()=>find('#rq-service')?.closest('.rq-field'));}
+    else if(event.target.closest('.sb-person')){cancelIntentProgress();manualUntil=0;progress(()=>find('[data-sb-widget]')||find('[data-sb-content]'));}
   });
   document.addEventListener('click',event=>{if(event.target.closest('[data-widget-apply],.sb-slot'))timeIntent=performance.now();},true);
   form.addEventListener('change',event=>{if(event.target.id==='rq-files')uploadIntent=performance.now();},true);
@@ -114,8 +119,9 @@
   const timeNote=find('.sb-selection'),previews=find('.rq-previews');
   if(timeNote)flowObserver.observe(timeNote,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
   if(previews)flowObserver.observe(previews,{subtree:true,childList:true});
-  scroll.addEventListener('wheel',cancelProgress,{passive:true});scroll.addEventListener('touchstart',cancelProgress,{passive:true});
-  dialog.addEventListener('close',cancelProgress);
+  scroll.addEventListener('wheel',interruptProgress,{passive:true});scroll.addEventListener('touchstart',cancelProgress,{passive:true});scroll.addEventListener('touchmove',interruptProgress,{passive:true});
+  form.addEventListener('reset',interruptProgress);
+  dialog.addEventListener('close',interruptProgress);
   const close=dialog.querySelector('[data-dialog-close]');
   const submit=mount.querySelector('button[type="submit"]');
   submit.classList.add('rq-orbit');

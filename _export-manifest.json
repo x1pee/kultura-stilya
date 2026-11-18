@@ -354,13 +354,13 @@
     },
     {
       "path": "cinema-studio/index.html",
-      "bytes": 77391,
-      "sha256": "1f55479553dd0522e180de7a6522d9b223aa1dc470b5af842e0bde4ff4984cae"
+      "bytes": 77243,
+      "sha256": "0ba7cdf916c52a872e3b185388ea6dbbb96f256463bee6dac75883fbbecc5ddb"
     },
     {
       "path": "cinema-studio/style.css",
-      "bytes": 161772,
-      "sha256": "622f03e7b744e881b6901c24427f5b699925afea3ff68dcf48c07e353ed6450d"
+      "bytes": 162338,
+      "sha256": "6935380f471f289ada2420ed9461354f0615b8348c40486b02fb233c55f9de3c"
     },
     {
       "path": "index.html",
@@ -374,8 +374,8 @@
     },
     {
       "path": "shared/request.js",
-      "bytes": 36691,
-      "sha256": "7c8314504aa678e33b018e3ac7bee3edfdd8a1d0943887487dc534c8ef5630c5"
+      "bytes": 36567,
+      "sha256": "129d9fce064046943ca32451e6c6fd80dd3c7a0611650c565a5c916bc4ba4e98"
     },
     {
       "path": "shared/studio-booking.css",
@@ -390,12 +390,12 @@
     {
       "path": "shared/studio-modal.css",
       "bytes": 21821,
-      "sha256": "720fe218987948c56bf4483c11c1989da2f8b76c8b85b55232f93b2965842169"
+      "sha256": "300c3807f8a1a27fac5431109b83fbed00e85b3843e845cb47cbab0afdae5607"
     },
     {
       "path": "shared/studio-modal.js",
-      "bytes": 14167,
-      "sha256": "18fa8c5bd4d10440bd392af28c04a9e2827d52a2bc3c8e4b7a8df35a2a1963df"
+      "bytes": 14898,
+      "sha256": "6c3a5dd8e4984294561c7fad56bc061ba54508bd9d100a2d013a75aa69df8781"
     },
     {
       "path": "shared/studio-request-data.js",
