@@ -66,7 +66,7 @@
  document.addEventListener('click',event=>{const pick=event.target.closest('[data-direction],[data-work-filter]');if(custom&&pick)custom.dataset.requestCategory=pick.dataset.direction||pick.dataset.workFilter});
  // Finite entrances only. Content stays visible if motion support is unavailable.
  const entrances=new Set();
- const revealCards=[...document.querySelectorAll('.direction-card,.work-card,.work-custom,.service-group')].filter(card=>!card.classList.contains('reveal'));
+ const revealCards=[...document.querySelectorAll('.direction-card,.work-card,.work-custom')].filter(card=>!card.classList.contains('reveal'));
  const ownEntrances=new WeakMap();
  let revealObserver=null;
  function settleEntrances(){for(const motion of entrances)motion.cancel();entrances.clear()}
@@ -77,11 +77,11 @@
     const card=entry.target;revealObserver.unobserve(card);
     if(document.hidden||reduced.matches||!card.animate)continue;
     const peers=[...card.parentElement.children].filter(el=>!el.hidden&&el.matches('.direction-card,.work-card,.service-group'));
-    const columns=innerWidth<=900?2:3,stagger=Math.max(0,peers.indexOf(card))%columns*65;
-    const options={duration:600,delay:stagger,easing:'cubic-bezier(.22,.8,.22,1)',fill:'backwards'};
-    const motions=[card.animate([{opacity:.35},{opacity:1}],options)];
-    // Additive identity does not replace the live selected/hover transform at the last frame.
-    if('KeyframeEffect'in window&&'composite'in KeyframeEffect.prototype)motions.push(card.animate([{transform:'translate3d(0,16px,0)'},{transform:'translate3d(0,0,0)'}],{...options,composite:'add'}));
+    const columns=innerWidth<=900?2:3,stagger=Math.max(0,peers.indexOf(card))%columns*45;
+    // One opacity-only entrance: large text panels never leave a temporary transform layer.
+    // Keep the real selected/hover transform in CSS throughout the entrance and its final frame.
+    const options={duration:420,delay:stagger,easing:'cubic-bezier(.22,.8,.22,1)',fill:'backwards'};
+    const motions=[card.animate([{opacity:.72},{opacity:1}],options)];
     ownEntrances.set(card,new Set(motions));
     for(const motion of motions){entrances.add(motion);motion.finished.then(()=>{entrances.delete(motion);ownEntrances.get(card)?.delete(motion)},()=>{entrances.delete(motion);ownEntrances.get(card)?.delete(motion)})}
    }

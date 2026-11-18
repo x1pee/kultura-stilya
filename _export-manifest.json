@@ -219,18 +219,18 @@
     },
     {
       "path": "cinema-studio/app.js",
-      "bytes": 22542,
-      "sha256": "3d6da671fcd6a464af246e8ac73308b3540c6f6fe00f2cb36eb6e25506dc3b4f"
+      "bytes": 22421,
+      "sha256": "3a673aa7339363aeef448fdb736a525a1dbc7ce9cd0c9bcd58207659400e0b22"
     },
     {
       "path": "cinema-studio/index.html",
-      "bytes": 57263,
-      "sha256": "37b7daae188221d43f5773290150f72bca99062cf4c0085cdc3630226824f9ed"
+      "bytes": 57101,
+      "sha256": "d3120badcffa3557781ab275e9bbd7070ae777183f33b5d370b539a61522c65c"
     },
     {
       "path": "cinema-studio/style.css",
-      "bytes": 83072,
-      "sha256": "66e48e4dca058fa724c8e4e3233a1eac26d774e6c539bb1f09c662c278c58ac7"
+      "bytes": 83904,
+      "sha256": "7da2da0d9c356b4f0ffbdfe7fe09ea540e874c4334af79998e5dacfb20113f92"
     },
     {
       "path": "index.html",

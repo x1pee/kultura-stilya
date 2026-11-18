@@ -393,18 +393,27 @@ html[data-studio-theme=mono] .studio .direction-card[aria-pressed=true] .directi
 /* Stable composited text baseline: finishing a reveal does not switch back from a matrix to none. */
 html.motion .studio .reveal{transform:translate3d(0,0,0);transition:opacity .6s var(--ease),transform .65s var(--ease)}
 html.motion .studio .reveal:not(.shown){transform:translate3d(0,16px,0)}
+/* Card children own their single fade; a grouped reveal must not animate them again. */
+html.motion .studio :is(.direction-grid,.work-grid,.service-groups).reveal{opacity:1;transform:none;transition:none}
 .studio .hero-heading h1 span,.studio .hero-heading h1 em,.studio .hero-bottom{transform:translate3d(0,0,0)}
 @keyframes studio-title-enter{from{opacity:.25;transform:translate3d(0,16px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
-@media(hover:hover) and (pointer:fine){.studio .direction-card:hover{transform:translateY(-2px) scale(1.015)}.studio .direction-card:hover::after{animation:r8-direction-sheen .65s ease-out both}}
-.studio .direction-card:active{transform:scale(.99)}
+@media(hover:hover) and (pointer:fine){.studio .direction-card:hover{transform:translateY(-2px) scale(1.015)}.studio .direction-card:hover::after{animation:r8-direction-sheen .65s ease-out both}.studio .direction-card:active{transform:scale(.99)}}
+/* A touch scroll can enter :active/:hover before Safari cancels the gesture. */
+@media(hover:none),(pointer:coarse){
+ .studio .direction-card,.studio .direction-card:hover,.studio .direction-card:active{transform:none}
+ .studio .direction-card[aria-pressed=true],.studio .direction-card[aria-pressed=true]:hover,.studio .direction-card[aria-pressed=true]:active{transform:scale(1.015)}
+ .studio .direction-card:hover img,.studio .work-image:hover img{transform:none}
+ .studio .work-card,.studio .work-card:hover{transform:none;translate:none}
+ .studio .work-custom:hover,.studio .work-custom:active{transform:none}
+}
 @media(prefers-reduced-motion:reduce){.studio .deck-stage.is-changing [data-deck-current],.studio .deck-stage.is-changing [data-deck-incoming],.studio .direction-card::after{animation:none!important}.studio .direction-card,.studio .direction-card:hover,.studio .direction-card[aria-pressed=true],.studio .direction-card:active{transform:none!important}.studio .direction-card,.studio .direction-card::before{transition:none!important}}
 
 /* Full, uncropped salon signature rather than an avatar. */
 .studio .hero-image picture{display:contents}
 .studio .studio-marquee-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:30px;color:#d9c7a0}
-.studio .studio-marquee-icon svg{display:block;width:28px;height:28px;stroke-width:1.5}
+.studio .studio-marquee-icon svg{display:block;width:24px;height:24px;stroke-width:1.4}
 html[data-studio-theme=mono] .studio .studio-marquee-icon{color:#ded6c6}
-@media(max-width:620px){.studio .studio-marquee-icon{width:26px}.studio .studio-marquee-icon svg{width:25px;height:25px}}
+@media(max-width:620px){.studio .studio-marquee-icon{width:26px}.studio .studio-marquee-icon svg{width:24px;height:24px}}
 .studio .brand-real-logo{width:58px;height:58px;min-width:58px;padding:3px;border:1px solid #ffffff45;border-radius:9px;overflow:visible;background:#fff;box-sizing:border-box}
 .studio .brand-real-logo img{width:100%;height:100%;object-fit:contain;border-radius:0}
 .studio .trust-rating>strong span,html[data-studio-theme=mono] .studio .trust-rating>strong span{color:#b58221}
