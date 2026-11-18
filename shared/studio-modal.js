@@ -5,6 +5,8 @@
   if(!mount||!window.KulturaRequest?.setPresentationAdapter)return;
   const section=mount.closest('section');
   const dialog=document.createElement('dialog');dialog.id='studio-request-dialog';dialog.className='studio-request-dialog';dialog.setAttribute('aria-labelledby','studio-request-title');
+  dialog.setAttribute('closedby','none');
+  dialog.addEventListener('cancel',event=>event.preventDefault(),{capture:true});
   dialog.innerHTML='<header class="studio-request-header"><span id="studio-request-title">Ваш визит в Культуру Стиля</span><button type="button" data-dialog-close aria-label="Закрыть окно заявки">×</button></header><div class="studio-request-scroll"></div>';
   const scroll=dialog.querySelector('.studio-request-scroll');scroll.append(mount);document.body.append(dialog);
   // The draft lives in the dialog; no duplicate invitation or empty padded section remains.
@@ -12,6 +14,7 @@
   const rq=mount.querySelector('.rq');
   rq.classList.add('rq-compact');
   rq.querySelector('h2').textContent='Детали вашего визита';
+  rq.querySelector('h2').hidden=true;
   rq.querySelector('.rq-intro').textContent='Выберите услугу, добавьте пожелания и фотографии. Черновик останется в этой вкладке';
   const form=rq.querySelector('form');
   const contactColumn=rq.querySelector('.rq-layout>.rq-col:nth-child(2)');
@@ -20,15 +23,22 @@
   const bottom=form.querySelector('.rq-bottom');if(bottom)contactColumn.append(bottom);
   const uploadField=rq.querySelector('[data-rq-upload]');
   const upload=uploadField.querySelector('.rq-upload');
-  const referenceDetails=document.createElement('details');referenceDetails.className='rq-reference-details';
-  referenceDetails.innerHTML='<summary data-reference-toggle><span class="rq-reference-title">Фото и референсы</span><span class="rq-reference-count"></span><i aria-hidden="true">+</i></summary>';
+  const referenceDetails=document.createElement('section');referenceDetails.className='rq-reference-details';referenceDetails.setAttribute('aria-label','Фотографии и референсы');
+  referenceDetails.innerHTML='<header class="studio-reference-heading"><span class="rq-reference-title">Фото и референсы</span><span class="rq-reference-count"></span></header>';
   referenceDetails.append(upload);uploadField.append(referenceDetails);
   const referenceTitle=referenceDetails.querySelector('.rq-reference-title'),referenceCount=referenceDetails.querySelector('.rq-reference-count');
-  const fileHint=rq.querySelector('#rq-files-hint');if(fileHint)fileHint.textContent='До 5 фото по 10 МБ · JPG, PNG, WebP, HEIC · только в этой вкладке';
+  const fileInput=rq.querySelector('#rq-files'),fileHint=rq.querySelector('#rq-files-hint');
+  fileHint?.remove();fileInput.setAttribute('aria-describedby','rq-files-error');fileInput.setAttribute('aria-label','Добавить фотографии');
+  const fileChoice=document.createElement('div');fileChoice.className='studio-file-choice';
+  fileChoice.innerHTML='<span aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5"/><path d="m3 16 5-5 4 4 3-3 6 6"/></svg><span>Добавить фото</span></span>';
+  fileInput.before(fileChoice);fileChoice.append(fileInput);
   const paste=rq.querySelector('[data-reference-paste]');if(paste){
     paste.dataset.placeholder='Вставить фото';
+    const pasteChoice=document.createElement('div');pasteChoice.className='studio-paste-choice';
+    pasteChoice.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="3"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>';
+    paste.before(pasteChoice);pasteChoice.append(paste);
     const pasteHint=document.createElement('small');pasteHint.id='studio-paste-hint';pasteHint.className='studio-paste-hint';pasteHint.textContent='Скопируйте фото и вставьте как текст — удерживайте поле и выберите «Вставить»';
-    paste.after(pasteHint);paste.setAttribute('aria-describedby',[paste.getAttribute('aria-describedby'),pasteHint.id].filter(Boolean).join(' '));
+    pasteChoice.after(pasteHint);paste.setAttribute('aria-describedby',[paste.getAttribute('aria-describedby'),pasteHint.id].filter(Boolean).join(' '));
   }
   let compactCategory=null;
   function syncCompact(forceCategory=false){
@@ -37,14 +47,10 @@
     const changed=category!==compactCategory;
     const count=upload.querySelector('.rq-previews').childElementCount;
     const work=!rq.querySelector('.rq-work').hidden;
-    const required=category==='tattoo';
     const label=rq.querySelector('[data-rq-upload-label]').textContent;
-    const countLabel=count?count+' / 5':work?'выбран образ':required?'обязательно':'добавить фото';
+    const countLabel=count?count+' фото':work?'выбран образ':'';
     if(referenceTitle.textContent!==label)referenceTitle.textContent=label;
     if(referenceCount.textContent!==countLabel)referenceCount.textContent=countLabel;
-    referenceDetails.dataset.required=String(required);
-    if(required||count||work||rq.querySelector('#rq-files-error').textContent)referenceDetails.open=true;
-    else if(changed)referenceDetails.open=false;
     rq.classList.toggle('rq-custom-draft',rq.querySelector('#rq-service').value==='');
     if(changed||forceCategory){
       const categories=rq.querySelector('.rq-categories');
@@ -58,13 +64,13 @@
   }
   const compactObserver=new MutationObserver(()=>syncCompact());
   compactObserver.observe(mount,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','aria-pressed','aria-invalid']});
-  referenceDetails.addEventListener('dragover',e=>{if(Array.from(e.dataTransfer?.types||[]).includes('Files')){e.preventDefault();referenceDetails.open=true;}});
+  referenceDetails.addEventListener('dragover',e=>{if(Array.from(e.dataTransfer?.types||[]).includes('Files'))e.preventDefault();});
   referenceDetails.addEventListener('drop',e=>{
     if(!paste||paste.contains(e.target)||!e.dataTransfer?.files?.length)return;
-    e.preventDefault();e.stopPropagation();referenceDetails.open=true;
+    e.preventDefault();e.stopPropagation();
     paste.dispatchEvent(new DragEvent('drop',{bubbles:false,cancelable:true,dataTransfer:e.dataTransfer}));
   });
-  form.addEventListener('reset',()=>queueMicrotask(()=>{referenceDetails.open=false;compactCategory=null;syncCompact(true)}));
+  form.addEventListener('reset',()=>queueMicrotask(()=>{compactCategory=null;syncCompact(true)}));
   syncCompact();
   // Deliberate choices advance only this dialog; typing never scrolls or moves focus.
   let progressTimer=0,timeIntent=0,uploadIntent=0,manualUntil=0;
@@ -90,11 +96,11 @@
     },delay);
   }
   mount.addEventListener('kultura:request-selection',event=>{timeIntent=0;uploadIntent=0;manualUntil=0;progress(()=>event.detail?.serviceId?find('.sb'):find('#rq-service')?.closest('.rq-field'),260);});
-  form.addEventListener('change',event=>{if(event.target.id==='rq-service'){cancelIntentProgress();manualUntil=0;if(event.target.value!=='')progress(()=>find('.sb'),110,event.target);}});
+  form.addEventListener('change',event=>{if(event.target.id==='rq-service'){cancelIntentProgress();manualUntil=0;if(event.target.value!=='')progress(()=>find('.sb'),180,event.target);}});
   form.addEventListener('input',cancelIntentProgress);
   form.addEventListener('focusin',event=>{if(event.target.matches('input,select,textarea,[contenteditable=true]'))cancelIntentProgress();});
   form.addEventListener('click',event=>{
-    if(event.target.closest('[data-rq-category]')){cancelIntentProgress();manualUntil=0;progress(()=>find('#rq-service')?.closest('.rq-field'));}
+    if(event.target.closest('[data-rq-category]')){cancelIntentProgress();manualUntil=0;progress(()=>find('#rq-service')?.value!==''?find('.sb'):find('#rq-service')?.closest('.rq-field'),180);}
     else if(event.target.closest('.sb-person')){cancelIntentProgress();manualUntil=0;progress(()=>find('[data-sb-widget]')||find('[data-sb-content]'));}
   });
   document.addEventListener('click',event=>{if(event.target.closest('[data-widget-apply],.sb-slot'))timeIntent=performance.now();},true);
@@ -161,7 +167,6 @@
     if(e.shiftKey&&(document.activeElement===first||!dialog.contains(document.activeElement))){e.preventDefault();last.focus({preventScroll:true});}
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus({preventScroll:true});}
   });
-  dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();});
   document.addEventListener('click',e=>{const trigger=e.target.closest('a[href="#request"],[data-open-request]');if(!trigger)return;e.preventDefault();if(trigger.matches('[data-open-request]'))window.KulturaRequest.select({custom:true,trigger});else open({trigger});});
   document.addEventListener('visibilitychange',motion);reduced.addEventListener('change',motion);
   window.KulturaRequest.setPresentationAdapter({open});

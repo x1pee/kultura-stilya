@@ -354,8 +354,8 @@
     },
     {
       "path": "cinema-studio/index.html",
-      "bytes": 77243,
-      "sha256": "0ba7cdf916c52a872e3b185388ea6dbbb96f256463bee6dac75883fbbecc5ddb"
+      "bytes": 77481,
+      "sha256": "2cde34a154c741c823d0f6209c2f62d8ec0c9b2ce2845ee6859086fad51ebfac"
     },
     {
       "path": "cinema-studio/style.css",
@@ -374,8 +374,8 @@
     },
     {
       "path": "shared/request.js",
-      "bytes": 36567,
-      "sha256": "129d9fce064046943ca32451e6c6fd80dd3c7a0611650c565a5c916bc4ba4e98"
+      "bytes": 39195,
+      "sha256": "556cfc4e9bfa6a1254fb5e285275cf073fcb6ee402485e762be55a4e68016db9"
     },
     {
       "path": "shared/studio-booking.css",
@@ -384,23 +384,38 @@
     },
     {
       "path": "shared/studio-booking.js",
-      "bytes": 16019,
-      "sha256": "9d94b5ef578d1ad70bf39b95bd63c55aa3dce90fd57de281342280f635afcc13"
+      "bytes": 17649,
+      "sha256": "6f83cc7ae3a909fe33bb4f5a7175d7da8cb3fdb3b462015c0bd869a2c725d28f"
     },
     {
       "path": "shared/studio-modal.css",
-      "bytes": 21821,
-      "sha256": "300c3807f8a1a27fac5431109b83fbed00e85b3843e845cb47cbab0afdae5607"
+      "bytes": 25806,
+      "sha256": "49865c981fddbdba126b854f2e29dc7caba2b83845a2e1ee55f82f27536f55e8"
     },
     {
       "path": "shared/studio-modal.js",
-      "bytes": 14898,
-      "sha256": "6c3a5dd8e4984294561c7fad56bc061ba54508bd9d100a2d013a75aa69df8781"
+      "bytes": 15414,
+      "sha256": "37d6f9c713c7fdb2c089652330cf81158dd583a4024038e8e84910e4b81a4772"
     },
     {
       "path": "shared/studio-request-data.js",
       "bytes": 29895,
       "sha256": "7a1dd149a82844ab838b95d2aa354460c041bd2c9a122e8e4b67ffb0a7dd2bfc"
+    },
+    {
+      "path": "shared/studio-request-steps.js",
+      "bytes": 2009,
+      "sha256": "45bb047d518dbc4aecd0fff0cbf654a8e7f5feaecf2822bc4d053a16304361a7"
+    },
+    {
+      "path": "shared/studio-service-picker.css",
+      "bytes": 6025,
+      "sha256": "e97585c8d49a63bca5db3c217cdb49675bf8590b85ebf86289d74e5ea2a10750"
+    },
+    {
+      "path": "shared/studio-service-picker.js",
+      "bytes": 13905,
+      "sha256": "f234cb113d552bd190c826318bb545a5d1b833106131d7a6f9815b0a20a73567"
     },
     {
       "path": "shared/studio-staff-data.js",
@@ -409,8 +424,8 @@
     },
     {
       "path": "shared/studio-widget.js",
-      "bytes": 6107,
-      "sha256": "9d975cd90793bf45d43490ae09f83a88efdd9258bf82fb3ada35ecfe7bbf096e"
+      "bytes": 7989,
+      "sha256": "3a5d06162a28a4074e96da7c150d852a801679a4bcc394adba19cc863c2cc1c6"
     },
     {
       "path": "shared/vendor/libphonenumber-LICENSE.txt",
@@ -434,8 +449,8 @@
     },
     {
       "path": "src/read-only-viewer.mjs",
-      "bytes": 23527,
-      "sha256": "4c310980e70b56ef2d1ca36859ed5ac84c9c2bd1bc3ab4774c1d7f9a370a6ffd"
+      "bytes": 25708,
+      "sha256": "c427ae2bb29cd03b850f50bf65cc1a7fdbb809aa9d1c6592a571b24fc9132084"
     }
   ]
 }

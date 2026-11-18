@@ -33,12 +33,22 @@
   if(presetHint){presetHint.className='rq-small rq-preset-note';presetHint.dataset.rqPresetNote='';presetHint.hidden=true;q('.rq-summary').append(presetHint);}
   function paintPreset(){if(presetHint){presetHint.hidden=!selectedPreset;presetHint.textContent=selectedPreset?.note||'';}}
   let files = [];
+  const decodingUrls = new Set();
   let fileBusy = false;
   let fileEpoch = 0;
   let phone = null;
   let bookingAdapter = null;
   let presentationAdapter = null;
   let customIntent = false;
+  const categoryDrafts = new Map();
+  const draftFields = ['place','other','length','width','color','nails','date','comment'];
+  let draftResetPending = false;
+  function saveCategoryDraft() {
+    const draft=categoryDrafts.get(category.id)||{pendingBatches:0};
+    Object.assign(draft,{serviceId:service.value===''?null:category.services[Number(service.value)]?.canonicalId,customIntent,selectedWork,selectedPreset,files,consentMode,
+      values:Object.fromEntries(draftFields.map(id=>[id,field(id).value])),age:field('age').checked,read:field('read').checked});
+    categoryDrafts.set(category.id,draft);return draft;
+  }
   let lastDialogFocus = null;
   const dialogs = [];
   function makeDialog(title) {
@@ -114,16 +124,36 @@
     updateTattooConsent(s);
     bookingAdapter?.onServiceChange?.({category:category.id,service:s,index:service.value===''?null:Number(service.value),isCustom:customIntent,categoryServices:category.services});
   }
-  function clearFiles() { fileEpoch++; files.forEach(f=>URL.revokeObjectURL(f.url));files=[];field('files').value='';renderFiles(); }
-  function updateCategory(id, title) {
+  function clearFiles() {
+    fileEpoch++;
+    const urls=new Set(files.map(f=>f.url));
+    for(const url of decodingUrls)urls.add(url);decodingUrls.clear();
+    if(freeTattooPlace){for(const draft of categoryDrafts.values())for(const entry of draft.files||[])urls.add(entry.url);categoryDrafts.clear();fileBusy=false;uploadChain=Promise.resolve();pendingBatches=0;}
+    urls.forEach(url=>URL.revokeObjectURL(url));files=[];field('files').value='';renderFiles();
+  }
+  function updateCategory(id, title, intent) {
     const next = neutralSelection&&!id?neutralCategory:data.categories.find(c=>c.id===id); if(!next)return;
     const categoryChanged=category.id!==id;
     const previousTitle=freeTattooPlace&&!categoryChanged&&service.value!==''?category.services[Number(service.value)]?.title:null;
-    if(categoryChanged) { clearFiles(); selectedWork=null;selectedPreset=null;paintPreset();paintWork(); }
+    let restored=null;
+    if(categoryChanged) {
+      if(freeTattooPlace){
+        if(!draftResetPending)saveCategoryDraft();
+        restored=categoryDrafts.get(id)||null;
+        files=restored?.files||[];fileBusy=Boolean(restored?.pendingBatches);field('files').value='';
+        selectedWork=restored?.selectedWork||null;selectedPreset=restored?.selectedPreset||null;customIntent=restored?.customIntent||false;
+        for(const key of draftFields)field(key).value=restored?.values?.[key]||'';
+        field('age').checked=Boolean(restored?.age);field('read').checked=Boolean(restored?.read);consentMode=restored?.consentMode||'';
+        renderFiles();
+      }else {clearFiles();selectedWork=null;selectedPreset=null;}
+      paintPreset();paintWork();
+    }
     category=next;
+    if(freeTattooPlace){if(intent==='ready')customIntent=false;else if(intent==='custom'&&!restored)customIntent=true;}
     for(const b of mount.querySelectorAll('[data-rq-category]'))b.setAttribute('aria-pressed',String(b.dataset.rqCategory===id));
     service.innerHTML=(customIntent||neutralSelection?'<option value="">'+(!category.id?'Сначала выберите направление':customIntent?'Выберите услугу, если уже знаете':'Выберите услугу')+'</option>':'')+category.services.map((s,i)=>`<option value="${i}">${esc(s.title)} · ${esc(priceLabel(s))}</option>`).join('');
     service.disabled=neutralSelection&&!category.id;
+    if(restored?.serviceId){const index=category.services.findIndex(s=>s.canonicalId===restored.serviceId);if(index>=0)service.value=String(index);}
     const targetTitle=title||previousTitle;
     if(targetTitle) { const index=category.services.findIndex(s=>s.title===targetTitle);if(index>=0)service.value=String(index); }
     for(const [key,selector] of [['tattoo','[data-rq-tattoo]'],['tattoo','[data-rq-checks]'],['color','[data-rq-color]'],['nails','[data-rq-nails]']]) {
@@ -133,9 +163,9 @@
     const canUpload=freeTattooPlace||['color','nails','tattoo'].includes(id); q('[data-rq-upload]').hidden=!canUpload;field('files').disabled=!canUpload||fileBusy;
     q('[data-rq-upload-label]').textContent=id==='tattoo'?'Референсы татуировки *':'Фотографии и референсы';
     q('[data-rq-upload-hint]').textContent=id==='color'?'Можно добавить желаемый результат и фото ваших волос сейчас':id==='nails'?'Добавьте понравившийся дизайн — мастер сможет заранее обсудить детали':'Добавьте пример желаемого образа или свою идею';
-    if(!freeTattooPlace||categoryChanged){field('age').checked=false;field('read').checked=false;field('place').value='';field('length').value='';field('width').value='';field('other').value='';}
+    if(!freeTattooPlace){field('age').checked=false;field('read').checked=false;field('place').value='';field('length').value='';field('width').value='';field('other').value='';}
     q('[data-rq-other]').hidden=true;field('other').disabled=true;
-    clearErrors();updateService();
+    clearErrors();updateService();draftResetPending=false;
   }
   function paintWork() {
     const el=q('.rq-work');el.hidden=!selectedWork;
@@ -157,8 +187,9 @@
       tile.append(image,name,remove);box.append(tile);
     });
   }
-  async function isImage(file) {
+  async function isImage(file,epoch=fileEpoch) {
     const b=new Uint8Array(await file.slice(0,32).arrayBuffer());
+    if(epoch!==fileEpoch)return false;
     const jpeg=b[0]===255&&b[1]===216&&b[2]===255;
     const png=b[0]===137&&b[1]===80&&b[2]===78&&b[3]===71&&b[4]===13&&b[5]===10&&b[6]===26&&b[7]===10;
     const str=new TextDecoder('ascii').decode(b);
@@ -166,7 +197,7 @@
     const heic=str.slice(4,8)==='ftyp'&&/heic|heix|hevc|hevx|mif1|msf1/.test(str.slice(8));
     if(heic) {
       // A browser may not decode HEIC, but a signature alone is not a photograph.
-      const bytes=await file.arrayBuffer();const view=new DataView(bytes);let offset=0,meta=false,media=false,brand=false;
+      const bytes=await file.arrayBuffer();if(epoch!==fileEpoch)return false;const view=new DataView(bytes);let offset=0,meta=false,media=false,brand=false;
       while(offset+8<=bytes.byteLength){let size=view.getUint32(offset);const type=new TextDecoder('ascii').decode(new Uint8Array(bytes,offset+4,4));let header=8;
         if(size===1){if(offset+16>bytes.byteLength)return false;const large=view.getBigUint64(offset+8);if(large>BigInt(bytes.byteLength))return false;size=Number(large);header=16;}
         if(size===0)size=bytes.byteLength-offset;
@@ -180,25 +211,29 @@
     try {
       if(window.createImageBitmap){const bitmap=await createImageBitmap(file);const valid=bitmap.width>0&&bitmap.height>0;bitmap.close();return valid;}
       const url=URL.createObjectURL(file);
-      try{return await new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img.naturalWidth>0&&img.naturalHeight>0);img.onerror=()=>resolve(false);img.src=url;});}finally{URL.revokeObjectURL(url);}
+      decodingUrls.add(url);
+      try{return await new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img.naturalWidth>0&&img.naturalHeight>0);img.onerror=()=>resolve(false);img.src=url;});}finally{if(decodingUrls.delete(url))URL.revokeObjectURL(url);}
     }catch{return false;}
   }
   let uploadChain=Promise.resolve(),pendingBatches=0;
   function addFiles(incoming){
-    const batch=Array.from(incoming).slice(0,6),epoch=fileEpoch;
+    const batch=Array.from(incoming).slice(0,6),epoch=fileEpoch,targetFiles=files;
     if(!batch.length)return;
+    // Each decoder keeps its original RAM owner, even if the user changes direction.
+    const owner=freeTattooPlace?saveCategoryDraft():null;
+    if(owner)owner.pendingBatches++;
     pendingBatches++;fileBusy=true;field('files').disabled=true;
     uploadChain=uploadChain.then(async()=>{const errors=[];
     try { for(const file of batch) {
       if(epoch!==fileEpoch)break;
-      if(files.length>=5){errors.push('Можно добавить не больше 5 фото');break;}
+      if(targetFiles.length>=5){errors.push('Можно добавить не больше 5 фото');break;}
       if(file.size>10*1024*1024){errors.push('Фото «'+file.name+'» больше 10 МБ');continue;}
-      if(files.some(x=>x.file.name===file.name&&x.file.size===file.size&&x.file.lastModified===file.lastModified)){errors.push('Это фото уже добавлено');continue;}
-      if(!await isImage(file)){errors.push('Выберите фотографию JPG, PNG, WebP или HEIC');continue;}
+      if(targetFiles.some(x=>x.file.name===file.name&&x.file.size===file.size&&x.file.lastModified===file.lastModified)){errors.push('Это фото уже добавлено');continue;}
+      if(!await isImage(file,epoch)){errors.push('Выберите фотографию JPG, PNG, WebP или HEIC');continue;}
       if(epoch!==fileEpoch)break;
-      files.push({file,url:URL.createObjectURL(file)});
+      targetFiles.push({file,url:URL.createObjectURL(file)});
     }} catch {errors.push('Не удалось прочитать фото. Попробуйте другой файл');}
-    finally{pendingBatches--;fileBusy=pendingBatches>0;field('files').disabled=q('[data-rq-upload]').hidden||fileBusy;renderFiles();if(epoch===fileEpoch)setError('files',errors.join('. '));}
+    finally{if(!freeTattooPlace||epoch===fileEpoch)pendingBatches--;if(owner)owner.pendingBatches--;if(!freeTattooPlace||(epoch===fileEpoch&&targetFiles===files)){fileBusy=owner?owner.pendingBatches>0:pendingBatches>0;field('files').disabled=q('[data-rq-upload]').hidden||fileBusy;renderFiles();if(epoch===fileEpoch)setError('files',errors.join('. '));}}
     });
   }
   field('files').onchange=()=>{const input=field('files');const batch=Array.from(input.files||[]);input.value='';addFiles(batch);};
@@ -223,16 +258,17 @@
       if(match){preset=candidate;value={...value,serviceTitle:match.title};}
     }
     const changedCustomCategory=freeTattooPlace&&value.custom&&data.categories.some(c=>c.id===value.category&&c.id!==category.id);
+    const returningToDraft=freeTattooPlace&&value.category!==category.id&&categoryDrafts.has(value.category);
     const reopenCustom=freeTattooPlace&&value.custom&&customIntent&&!changedCustomCategory;
-    if(freeTattooPlace){if(value.custom)customIntent=true;else if(value.serviceTitle||value.workImage)customIntent=false;}
-    if(!reopenCustom)updateCategory(value.category || category.id, value.serviceTitle);
-    if(value.custom&&!reopenCustom){service.value='';selectedWork=null;selectedPreset=null;paintPreset();paintWork();updateService();}
+    const intent=freeTattooPlace?(value.custom?'custom':value.serviceTitle||value.workImage?'ready':null):null;
+    if(!reopenCustom)updateCategory(value.category || category.id, value.serviceTitle,intent);
+    if(value.custom&&!reopenCustom&&!returningToDraft){service.value='';selectedWork=null;selectedPreset=null;paintPreset();paintWork();updateService();}
     if(preset){selectedPreset=preset;paintPreset();}
     else if(value.serviceTitle||(!value.custom&&value.workImage)){selectedPreset=null;paintPreset();}
     if(value.workImage&&data.images.includes(value.workImage)) { selectedWork={image:value.workImage,label:String(value.workLabel||'Выбранная работа').slice(0,140)};paintWork(); }
     if(presentationAdapter)presentationAdapter.open(value);
     else mount.closest('#request')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
-    if(freeTattooPlace)mount.dispatchEvent(new CustomEvent('kultura:request-selection',{bubbles:true,detail:{category:category.id,serviceId:service.value===''?null:category.services[Number(service.value)]?.canonicalId||null,preset:Boolean(preset),custom:Boolean(value.custom)}}));
+    if(freeTattooPlace)mount.dispatchEvent(new CustomEvent('kultura:request-selection',{bubbles:true,detail:{category:category.id,serviceId:service.value===''?null:category.services[Number(service.value)]?.canonicalId||null,preset:Boolean(selectedPreset),custom:customIntent}}));
   }
   window.KulturaRequest={select,registerBookingAdapter(adapter){
     if(!mount.dataset.bookingMode)return false;
@@ -281,7 +317,7 @@
   });
   function localToday(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
   field('date').min=localToday();
-  form.addEventListener('reset',()=>{clearFiles();selectedWork=null;selectedPreset=null;customIntent=false;paintPreset();paintWork();bookingAdapter?.reset?.();queueMicrotask(()=>updateCategory(neutralSelection?'':data.categories[0].id));});
+  form.addEventListener('reset',()=>{draftResetPending=true;clearFiles();selectedWork=null;selectedPreset=null;customIntent=false;consentMode='';paintPreset();paintWork();bookingAdapter?.reset?.();queueMicrotask(()=>updateCategory(neutralSelection?'':data.categories[0].id));});
   window.addEventListener('pagehide',()=>{clearFiles();form.reset();dialogs.forEach(d=>{if(d.open)d.close();d.querySelector('.rq-review')?.remove();});});
   async function loadVendor(name){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=new URL('vendor/'+name,base).href;s.onload=resolve;s.onerror=reject;document.head.append(s);});}
   updateCategory(category.id);

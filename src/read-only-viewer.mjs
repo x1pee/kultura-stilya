@@ -33,10 +33,10 @@ const PAGE = /^\/company\/854459\/personal\/(?:menu|select-staff|select-services
 const HEADERS = {'Cache-Control':'no-store, max-age=0','Pragma':'no-cache','Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','X-Robots-Tag':'noindex, nofollow, noarchive','Permissions-Policy':'camera=(), microphone=(), geolocation=(), payment=()'};
 export const PUBLIC_BOOTSTRAP_RESOURCES = Object.freeze({
  source:'https://n918035.yclients.ru/',
- verifiedAt:'2026-11-17T23:03:34.617Z',
+ verifiedAt:'2026-11-18T16:45:57.756Z',
  storage:'https://n918035.yclients.ru/assets/js/empty-storage-if-not-exist.js',
  polyfills:'https://n918035.yclients.ru/polyfills-MUPSOIU4.js',
- main:'https://n918035.yclients.ru/main-PXX7I2XC.js',
+ main:'https://n918035.yclients.ru/main-M7RHWR23.js',
  styles:'https://n918035.yclients.ru/styles-VYRIQLW6.css'
 });
 
@@ -74,6 +74,18 @@ function browserGuard(config,normalizeSlots,readSlot) {
  const metadata = new Set(config.metadata.map(p=>config.upstream+p));
  const nativeFetch = window.fetch.bind(window);
  const message = data => {if(window.parent!==window)window.parent.postMessage({...data,type:'kultura-widget:'+data.type},config.parent);};
+ let rendered=false,failed=false,loadTimer=null;
+ function reportError(code){
+  if(failed)return;failed=true;clearTimeout(loadTimer);
+  message({type:'error',code,readOnly:true,companyId:854459,formId:918035});
+  if(!document.body||document.querySelector('[data-kultura-load-error]'))return;
+  const note=document.createElement('p');note.dataset.kulturaLoadError='';note.setAttribute('role','status');note.textContent='Не удалось загрузить расписание. Закройте это окно и откройте публичную форму YCLIENTS по ссылке на сайте.';note.style.cssText='margin:24px;padding:20px;font:16px/1.5 system-ui;background:#f8f7f3;color:#252525';document.body.prepend(note);
+ }
+ const coreRequest=raw=>{try{const u=new URL(raw,location.href);return allowed.has(u.origin+u.pathname);}catch{return false;}};
+ // Resource errors include a stale fingerprint returning HTML with status200.
+ addEventListener('error',event=>{const url=event.target?.src||event.target?.href;if(config.resources.includes(url))reportError('bootstrap');},true);
+ addEventListener('securitypolicyviolation',event=>{if(config.resources.includes(event.blockedURI))reportError('bootstrap');});
+ loadTimer=setTimeout(()=>reportError('timeout'),18000);
  let slotCache=null,generation=0,lastSelection='',highlighted=null,previousOutline=null;
  const roots=new Map();let queued=false;
  function queueProtect(){if(!queued){queued=true;queueMicrotask(()=>{queued=false;protect();});}}
@@ -109,11 +121,11 @@ function browserGuard(config,normalizeSlots,readSlot) {
   if(!readAllowed(target,method)) return Promise.reject(deny('fetch '+method,raw));
   const mapped=target!==new URL(raw,location.href).href;
   const meta=startAvailability(target);
-  return nativeFetch(mapped?(typeof input==='object'&&!(input instanceof URL)?new Request(target,input):target):input,init).then(response=>observeFetch(response,meta));
+  return nativeFetch(mapped?(typeof input==='object'&&!(input instanceof URL)?new Request(target,input):target):input,init).then(response=>{if(!response.ok&&coreRequest(target))reportError('availability');return observeFetch(response,meta);},error=>{if(coreRequest(target))reportError('availability');throw error;});
  };
  const open=XMLHttpRequest.prototype.open,send=XMLHttpRequest.prototype.send;
- const blockedXhr=new WeakSet(),xhrAvailability=new WeakMap(),observedXhr=new WeakSet();
- XMLHttpRequest.prototype.open=function(method,url,...rest){const target=targetUrl(url);if(!readAllowed(target,method))blockedXhr.add(this);else blockedXhr.delete(this);xhrAvailability.set(this,startAvailability(target));if(!observedXhr.has(this)){observedXhr.add(this);this.addEventListener('load',()=>{const meta=xhrAvailability.get(this);if(!meta||this.status!==200)return;try{const data=this.responseType==='json'?this.response:JSON.parse(this.responseText);receiveAvailability(meta,data);}catch{}});}return open.call(this,method,target,...rest);};
+ const blockedXhr=new WeakSet(),xhrAvailability=new WeakMap(),xhrCore=new WeakMap(),observedXhr=new WeakSet();
+ XMLHttpRequest.prototype.open=function(method,url,...rest){const target=targetUrl(url);if(!readAllowed(target,method))blockedXhr.add(this);else blockedXhr.delete(this);xhrCore.set(this,coreRequest(target));xhrAvailability.set(this,startAvailability(target));if(!observedXhr.has(this)){observedXhr.add(this);this.addEventListener('error',()=>{if(!blockedXhr.has(this)&&xhrCore.get(this))reportError('availability');});this.addEventListener('load',()=>{if(xhrCore.get(this)&&this.status>=400)reportError('availability');const meta=xhrAvailability.get(this);if(!meta||this.status!==200)return;try{const data=this.responseType==='json'?this.response:JSON.parse(this.responseText);receiveAvailability(meta,data);}catch{}});}return open.call(this,method,target,...rest);};
  XMLHttpRequest.prototype.send=function(...args){if(blockedXhr.has(this)){queueMicrotask(()=>{this.dispatchEvent(new ProgressEvent('error'));this.dispatchEvent(new ProgressEvent('loadend'));});return;}return send.apply(this,args);};
  try{navigator.sendBeacon=()=>false;}catch{}
  try{window.open=()=>null;}catch{}
@@ -167,6 +179,8 @@ function browserGuard(config,normalizeSlots,readSlot) {
   }
   if(contactStep())notice();
   state();
+  const app=document.querySelector('app-root');
+  if(!rendered&&!failed&&app?.childElementCount&&all('button,[role="button"],y-core-button,y-core-chip').some(node=>{if(!node.isConnected)return false;for(let host=node;host;host=host.getRootNode?.().host)if(app.contains(host))return true;return false;})){rendered=true;clearTimeout(loadTimer);message({type:'ready',phase:'interactive',readOnly:true,companyId:854459,formId:918035});}
  }
  function readOnlyClick(e){
   if(selectSlot(e))return;
@@ -184,12 +198,12 @@ function browserGuard(config,normalizeSlots,readSlot) {
   history[name]=function(data,title,url){if(url){const u=new URL(url,location.href);if(u.origin===own&&/\/(?:create-record|record|client|profile|payment|confirmation|confirm)(?:\/|$)/.test(u.pathname)){notice();return;}if(u.origin!==own||!(u.pathname==='/'||/^\/company\/854459\/personal\//.test(u.pathname)))throw deny('navigation',url);u.searchParams.set('parent',config.parent);url=u.pathname+u.search+u.hash;}const result=original(data,title,url);queueMicrotask(protect);return result;};
  }
  addEventListener('popstate',protect);
- function start(){captureRoot(document);protect();message({type:'ready',readOnly:true,companyId:854459,formId:918035});}
+ function start(){captureRoot(document);protect();}
  if(document.readyState==='loading')addEventListener('DOMContentLoaded',start,{once:true});else start();
 }
 
 export function guardSource(parentOrigin = PARENT) {
- const config={parent:parentOrigin,upstream:UPSTREAM,platform:PLATFORM,paths:READ_PATHS,posts:READ_POST,metadata:METADATA_PATHS,services:SERVICES,staff:STAFF};
+ const config={parent:parentOrigin,upstream:UPSTREAM,platform:PLATFORM,paths:READ_PATHS,posts:READ_POST,metadata:METADATA_PATHS,services:SERVICES,staff:STAFF,resources:Object.entries(PUBLIC_BOOTSTRAP_RESOURCES).filter(([key])=>['storage','polyfills','main','styles'].includes(key)).map(([,value])=>value)};
  return '('+browserGuard.toString()+')('+JSON.stringify(config)+',('+normalizePublicSlots.toString()+'),('+publicSlotChoice.toString()+'));';
 }
 
