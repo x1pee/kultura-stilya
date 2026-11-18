@@ -186,7 +186,7 @@
   const update=()=>{if(!track)return;const paused=manual||!visible||document.hidden||pageHidden||reduced.matches;track.toggleAttribute('data-motion-paused',paused);ribbon.dataset.motionState=reduced.matches?'reduced':document.hidden||pageHidden?'hidden':!visible?'offscreen':manual?'manual':'running';const label=reduced.matches?'Лента направлений: движение отключено в настройках устройства':manual?'Продолжить движение ленты направлений':'Приостановить ленту направлений';toggle.setAttribute('aria-pressed',String(manual||reduced.matches));toggle.setAttribute('aria-label',label);toggle.setAttribute('aria-disabled',String(reduced.matches));if(legacyPause){legacyPause.disabled=reduced.matches;legacyPause.setAttribute('aria-pressed',String(manual||reduced.matches));legacyPause.setAttribute('aria-label',label);const text=legacyPause.querySelector('span'),icon=legacyPause.querySelector('path');if(text)text.textContent=manual?'Продолжить':'Пауза';if(icon)icon.setAttribute('d',manual?'M8 5l10 7-10 7Z':'M8 5v14M16 5v14')}};
   const press=event=>{if(reduced.matches)return;event?.preventDefault();manual=!manual;update()};
   toggle.addEventListener('click',press);toggle.addEventListener('keydown',event=>{if(toggle.tagName!=='BUTTON'&&['Enter',' '].includes(event.key)){event.preventDefault();if(!event.repeat)press(event)}});
-  if('IntersectionObserver'in window)new IntersectionObserver(entries=>{visible=entries.some(e=>e.isIntersecting&&e.intersectionRatio>=.4);update()},{threshold:[0,.4,1]}).observe(ribbon);else visible=true;
+  if('IntersectionObserver'in window)new IntersectionObserver(entries=>{visible=entries.some(e=>e.isIntersecting);update()},{threshold:0}).observe(ribbon);else visible=true;
   document.addEventListener('visibilitychange',update);reduced.addEventListener('change',update);addEventListener('pagehide',()=>{pageHidden=true;update()});addEventListener('pageshow',()=>{pageHidden=false;update()});update();
  }
 })();
@@ -629,6 +629,56 @@
  apply('quiet');
 })();
 
+/* The CSS loop owns motion. Rebuild its two equal halves only when their size changes. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const ribbon=document.querySelector('.studio-ribbon-continuous');
+ const track=ribbon?.querySelector('[data-marquee-track]');
+ const viewport=ribbon?.querySelector('.studio-marquee');
+ const groups=track?[...track.children].filter(item=>item.classList.contains('studio-marquee-group')):[];
+ if(viewport&&groups.length===2){
+  const source=[...groups[0].children].map(item=>item.cloneNode(true));
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+  let copies=1,duration='';
+  function repeat(count){
+   if(count===copies)return;
+   for(const group of groups){
+    const fragment=document.createDocumentFragment();
+    for(let i=0;i<count;i++)for(const item of source)fragment.append(item.cloneNode(true));
+    group.replaceChildren(fragment);
+   }
+   copies=count;
+  }
+  function fit(){
+   if(reduced.matches){repeat(1);return}
+   const width=viewport.clientWidth,unit=groups[0].getBoundingClientRect().width/copies;
+   if(!source.length||width<=0||unit<=0)return;
+   // Each half includes one trailing gap, so width/copies remains the exact repeat width.
+   const count=Math.max(1,Math.ceil((width+1)/unit));
+   repeat(count);
+   const next=(unit*count/16).toFixed(3)+'s';
+   if(next!==duration){track.style.setProperty('--studio-marquee-duration',next);duration=next}
+  }
+  if('ResizeObserver'in window){const observer=new ResizeObserver(fit);observer.observe(viewport);observer.observe(groups[0])}
+  else addEventListener('resize',fit,{passive:true});
+  reduced.addEventListener('change',fit);
+  document.addEventListener('kultura:ribbon-preview',fit);
+  if(document.fonts){document.fonts.ready.then(fit);document.fonts.addEventListener('loadingdone',fit)}
+  fit();
+ }
+ // Keep the broad click/swipe zones and their labels; only replace font-dependent glyphs.
+ for(const button of document.querySelectorAll('.studio-gallery-zones [data-gallery-action=prev],.studio-gallery-zones [data-gallery-action=next]')){
+  const icon=button.querySelector('span[aria-hidden=true]');
+  if(!icon)continue;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',button.dataset.galleryAction==='prev'?'m15 6-6 6 6 6':'m9 6 6 6-6 6');
+  svg.append(path);icon.replaceChildren(svg);
+ }
+})();
+
 /* Temporary palette previews do not overwrite the visitor's saved salon/mono choice. */
 (() => {
  'use strict';
@@ -782,42 +832,41 @@
  window.KulturaStudioIntros={options,play,cancel};
 })();
 
-/* Temporary independent design switches; only display choices enter the URL. */
+/* Customer chooses the palette and intro; the approved composition stays fixed. */
 (() => {
  'use strict';
  if(!document.body.classList.contains('studio'))return;
  const themes=window.KulturaStudioThemes,intros=window.KulturaStudioIntros,heroes=window.KulturaStudioHeroes,ribbons=window.KulturaStudioRibbons;
  if(!themes||!intros||!heroes||!ribbons)return;
- const url=new URL(location.href),reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const url=new URL(location.href);
  const groups=[
   {key:'palette',label:'Палитра',items:themes.options,apply:id=>themes.apply(id)},
-  {key:'hero',label:'Первый экран',items:[{id:'original',title:'Текущий'},...heroes.options],apply:id=>heroes.apply(id)},
-  {key:'intro',label:'Вступление',items:intros.options,apply:id=>intros.play(id)},
-  {key:'ribbon',label:'Лента',items:ribbons.options,apply:id=>ribbons.apply(id)}
+  {key:'intro',label:'Вступление',items:intros.options,apply:id=>intros.play(id)}
  ];
  const current={};
- for(const group of groups){const requested=url.searchParams.get(group.key);current[group.key]=group.items.some(item=>item.id===requested)?requested:group.key==='palette'?(document.documentElement.dataset.studioTheme==='salon'?'salon':'mono'):group.items[0].id;}
- themes.apply(current.palette);heroes.apply(current.hero);ribbons.apply(current.ribbon);
+ for(const group of groups){const requested=url.searchParams.get(group.key);current[group.key]=group.items.some(item=>item.id===requested)?requested:group.key==='palette'?(document.documentElement.dataset.studioTheme==='salon'?'salon':'mono'):'signature';}
+ themes.apply(current.palette);heroes.apply('cover-left');ribbons.apply('marquee');
+ // Old review links remain usable, but visitors always see a clean company URL.
+ for(const key of ['v','palette','hero','intro','ribbon'])url.searchParams.delete(key);
+ history.replaceState(history.state,'',url);
  const panel=document.createElement('details');panel.className='studio-preview';
  panel.innerHTML='<summary><span class="studio-preview-label">Варианты дизайна</span><span class="studio-preview-mark" aria-hidden="true">+</span></summary><div class="studio-preview-body"><p>Выберите оформление</p><div class="studio-preview-options"></div><button type="button" class="studio-preview-replay">Повторить вступление</button><span class="studio-preview-status" role="status" aria-live="polite"></span></div>';
  const options=panel.querySelector('.studio-preview-options'),status=panel.querySelector('[role=status]');
  const buttons=new Map();
  function paint(group){const button=buttons.get(group.key),index=group.items.findIndex(item=>item.id===current[group.key]);button.querySelector('strong').textContent=group.items[index].title;button.querySelector('small').textContent=(index+1)+' / '+group.items.length;button.setAttribute('aria-label',group.label+': '+group.items[index].title+'. Следующий вариант');}
- function remember(){const next=new URL(location.href);for(const group of groups)next.searchParams.set(group.key,current[group.key]);history.replaceState(history.state,'',next);}
  for(const group of groups){
   const row=document.createElement('div'),label=document.createElement('span'),button=document.createElement('button');
   row.className='studio-preview-row';label.textContent=group.label;button.type='button';button.innerHTML='<strong></strong><small></small>';
   button.addEventListener('click',()=>{
    const index=group.items.findIndex(item=>item.id===current[group.key]);current[group.key]=group.items[(index+1)%group.items.length].id;
    if(group.key==='intro'){panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:'instant'});}
-   group.apply(current[group.key]);paint(group);remember();status.textContent=group.label+': '+group.items.find(item=>item.id===current[group.key]).title;
-   if(group.key==='hero'){panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:reduced.matches?'auto':'smooth'});}
+   group.apply(current[group.key]);paint(group);status.textContent=group.label+': '+group.items.find(item=>item.id===current[group.key]).title;
   });
   row.append(label,button);options.append(row);buttons.set(group.key,button);paint(group);
  }
  panel.querySelector('.studio-preview-replay').addEventListener('click',()=>{panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:'instant'});intros.play(current.intro);});
- document.addEventListener('click',event=>{if(panel.open&&!panel.contains(event.target))panel.open=false;const choice=event.target.closest('[data-theme-choice]');if(choice){current.palette=choice.dataset.themeChoice;paint(groups[0]);remember();}});
- addEventListener('storage',event=>{if(event.key==='kultura-theme'){current.palette=document.documentElement.dataset.studioTheme==='salon'?'salon':'mono';paint(groups[0]);remember();}});
+ document.addEventListener('click',event=>{if(panel.open&&!panel.contains(event.target))panel.open=false;const choice=event.target.closest('[data-theme-choice]');if(choice){current.palette=choice.dataset.themeChoice;paint(groups[0]);}});
+ addEventListener('storage',event=>{if(event.key==='kultura-theme'){current.palette=document.documentElement.dataset.studioTheme==='salon'?'salon':'mono';paint(groups[0]);}});
  panel.addEventListener('keydown',event=>{if(event.key==='Escape'){panel.open=false;panel.querySelector('summary').focus();}});
  const headerSwitch=document.querySelector('.studio-theme-switch');
  if(headerSwitch)headerSwitch.replaceWith(panel);else document.body.append(panel);

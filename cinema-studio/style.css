@@ -1034,3 +1034,69 @@ html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .stud
  html:root[lang][data-studio-theme] body.studio[data-studio-ribbon] .studio-ribbon-choice{transition:none}
  html:root[lang][data-studio-theme] body.studio[data-studio-ribbon] .studio-marquee-track{animation-play-state:paused!important}
 }
+
+/* Keep the section backgrounds full width while bounding their working content. */
+.studio :is(#directions,#works,#services) > :is(.section-head,.direction-grid,.work-filters,.work-custom,.work-grid,.work-note,.service-groups,.service-bottom){
+  max-width:1280px;
+  margin-inline:auto;
+}
+.studio #directions{padding-top:76px;padding-bottom:88px}
+.studio #services .service-group{margin-bottom:10px}
+.studio #services .service-group summary{padding:18px 22px}
+.studio #services .service-rows{padding:0 22px 8px}
+.studio #services .service-row{padding-block:16px;row-gap:10px}
+.studio #services .service-name p{margin-top:5px}
+
+/* Selection stays on the same baseline; only a fine-pointer hover lifts the card. */
+.studio #directions .direction-card,
+.studio #directions .direction-card:is(:hover,:active,[aria-pressed=true]){
+  transform:translate3d(0,0,0);
+  transition:transform .3s cubic-bezier(.22,.76,.22,1),box-shadow .3s ease;
+}
+.studio #directions .direction-card::after{content:none;display:none;animation:none}
+.studio #directions .direction-card img,
+.studio #directions .direction-card:hover img{transform:none}
+
+@media(min-width:901px){
+  .studio #directions .direction-grid{gap:20px}
+  .studio #directions .direction-card .direction-media{aspect-ratio:16/10;max-height:240px}
+  .studio #directions .direction-card .direction-copy{min-height:112px;padding:19px 22px 21px}
+  .studio #directions .direction-copy strong{font-size:24px}
+  .studio #directions .direction-copy>span{margin-top:8px;line-height:1.6}
+  .studio #works .work-grid{gap:20px}
+  .studio #works .work-card-bottom{padding:18px}
+  .studio #works .work-card h3{font-size:22px}
+  .studio #works .work-select{min-height:44px;margin-top:14px;padding:12px 15px}
+  .studio #services .service-group summary{font-size:22px}
+}
+@media(max-width:900px){
+  .studio #directions{padding-top:60px;padding-bottom:66px}
+}
+@media(max-width:620px){
+  .studio #directions{padding-top:46px;padding-bottom:54px}
+  .studio #directions .direction-grid,
+  .studio #works .work-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .studio #services .service-group summary{padding:17px 18px}
+  .studio #services .service-rows{padding:0 18px 8px}
+}
+@media(max-width:360px){
+  .studio #services .service-group summary,
+  .studio #services .service-rows{padding-inline:16px}
+}
+@media(hover:hover) and (pointer:fine){
+  .studio #directions .direction-card:hover{transform:translate3d(0,-2px,0);box-shadow:0 12px 26px #00000018}
+  .studio #directions .direction-card:active{transform:translate3d(0,-1px,0)}
+  .studio #works .work-card{transition:translate .3s ease,box-shadow .3s ease}
+  .studio #works .work-card:hover{translate:0 -2px;box-shadow:0 16px 30px #00000030}
+}
+@media(prefers-reduced-motion:reduce){
+  .studio #directions .direction-card,
+  .studio #directions .direction-card:is(:hover,:active,[aria-pressed=true]),
+  .studio #works .work-card,
+  .studio #works .work-card:hover{transform:none;translate:none;transition:none}
+}
+
+/* Equal halves cover the viewport; duration scales with width to keep a calm 16px/s. */
+html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .studio-marquee-track{animation-duration:var(--studio-marquee-duration,85s)}
+.studio .studio-gallery-zones button>span:not(.sr-only){font-size:0;line-height:0}
+.studio .studio-gallery-zones button>span:not(.sr-only)>svg{display:block;flex:none;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
