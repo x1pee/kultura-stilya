@@ -581,6 +581,54 @@
  }
 })();
 
+/* Calm alternatives reuse the six real direction controls and their existing flow. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const ribbon=document.querySelector('.studio-ribbon-continuous');
+ const directions=[...document.querySelectorAll('.direction-card[data-direction]')];
+ if(!ribbon||directions.length!==6)return;
+ const options=[
+  {id:'quiet',title:'Тихая строка'},
+  {id:'compact',title:'Компактная'},
+  {id:'columns',title:'Две колонки'},
+  {id:'pills',title:'Направления'},
+  {id:'marquee',title:'Медленное движение'},
+  {id:'none',title:'Без ленты'}
+ ];
+ const choices=document.createElement('nav');
+ choices.className='studio-ribbon-options';choices.setAttribute('aria-label','Выбрать направление салона');
+ const buttons=[];
+ for(const direction of directions){
+  const label=direction.querySelector('.direction-copy strong')?.textContent.trim();
+  if(!label)continue;
+  const button=document.createElement('button');button.type='button';button.className='studio-ribbon-choice';
+  button.textContent=label;button.dataset.ribbonCategory=direction.dataset.direction;button.setAttribute('aria-pressed','false');
+  button.addEventListener('click',()=>{
+   direction.click();
+   const filter=[...document.querySelectorAll('[data-work-filter]')].find(item=>item.dataset.workFilter===direction.dataset.direction);
+   filter?.focus({preventScroll:true});
+   sync();
+  });
+  choices.append(button);buttons.push(button);
+ }
+ ribbon.after(choices);
+ function sync(){for(const button of buttons){const direction=directions.find(item=>item.dataset.direction===button.dataset.ribbonCategory);button.setAttribute('aria-pressed',String(direction?.getAttribute('aria-pressed')==='true'));}}
+ function apply(id){
+  if(!options.some(option=>option.id===id))return false;
+  document.body.dataset.studioRibbon=id;
+  const moving=id==='marquee',visible=id!=='none';
+  ribbon.hidden=!moving;ribbon.inert=!moving;ribbon.setAttribute('aria-hidden',String(!moving));
+  choices.hidden=!visible||moving;choices.inert=!visible||moving;
+  sync();
+  document.dispatchEvent(new CustomEvent('kultura:ribbon-preview',{detail:{id}}));
+  return true;
+ }
+ document.addEventListener('click',event=>{if(event.target.closest('[data-direction],[data-work-filter]'))sync();});
+ window.KulturaStudioRibbons={options,apply};
+ apply('quiet');
+})();
+
 /* Temporary palette previews do not overwrite the visitor's saved salon/mono choice. */
 (() => {
  'use strict';
@@ -678,7 +726,7 @@
  const layer=document.createElement('div');
  layer.className='studio-intro';layer.setAttribute('aria-hidden','true');layer.inert=true;
  document.body.append(layer);
- let animations=[],timer=0,sequence=0;
+ let animations=[],timer=0,sequence=0,run=0;
  const word=()=>'<div class="studio-intro-word"><span>Культура</span><em>Стиля</em></div>';
  function cancel(){
   sequence++;clearTimeout(timer);timer=0;
@@ -690,6 +738,8 @@
   if(!options.some(option=>option.id===id)||reduced.matches||document.hidden||!Element.prototype.animate)return false;
   const current=sequence;
   layer.dataset.intro=id;
+  // Alternating names restart the CSS failsafe even for a rapid same-frame replay.
+  layer.dataset.introRun=String(++run%2);
   const split=id==='split'||id==='shutters';
   layer.innerHTML=split?'<div class="studio-intro-pane">'+word()+'</div><div class="studio-intro-pane">'+word()+'</div>':'<div class="studio-intro-pane">'+word()+(id==='signature'?'<i class="studio-intro-line"></i>':id==='frame'?'<i class="studio-intro-frame"></i>':'')+'</div>';
   layer.classList.add('is-active');
@@ -698,29 +748,32 @@
    animations.push(element.animate(frames,{duration,delay,easing:'cubic-bezier(.22,.75,.2,1)',fill:'both'}));
   };
   const panels=layer.querySelectorAll('.studio-intro-pane'),letters=layer.querySelectorAll('.studio-intro-word');
+  const hold=500,reveal=850;
+  // One stationary glass layer avoids a blur seam between moving clipped panels.
+  animate(layer,[{opacity:1},{opacity:0}],reveal,hold);
   if(id==='split'){
-   animate(panels[0],[{transform:'translateX(0)'},{transform:'translateX(-102%)'}],720,210);
-   animate(panels[1],[{transform:'translateX(0)'},{transform:'translateX(102%)'}],720,210);
+   animate(panels[0],[{transform:'translateX(0)',opacity:1},{transform:'translateX(-102%)',opacity:0}],reveal,hold);
+   animate(panels[1],[{transform:'translateX(0)',opacity:1},{transform:'translateX(102%)',opacity:0}],reveal,hold);
   }else if(id==='lift'){
-   animate(letters[0],[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)',offset:.28},{opacity:1,transform:'translateY(0)',offset:.68},{opacity:0,transform:'translateY(-24px)'}],820);
-   animate(panels[0],[{transform:'translateY(0)'},{transform:'translateY(-102%)'}],740,260);
+   animate(letters[0],[{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-28px)'}],800,hold);
+   animate(panels[0],[{transform:'translateY(0)',opacity:1},{transform:'translateY(-102%)',opacity:0}],reveal,hold);
   }else if(id==='iris'){
-   animate(letters[0],[{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.96)'}],400,150);
-   animate(panels[0],[{clipPath:'circle(150% at 50% 50%)'},{clipPath:'circle(0% at 50% 50%)'}],840,150);
+   animate(letters[0],[{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.96) translateY(-10px)'}],650,hold);
+   animate(panels[0],[{clipPath:'circle(150% at 50% 50%)',opacity:1},{clipPath:'circle(0% at 50% 50%)',opacity:0}],reveal,hold);
   }else if(id==='shutters'){
-   animate(panels[0],[{transform:'translateY(0)'},{transform:'translateY(-102%)'}],740,200);
-   animate(panels[1],[{transform:'translateY(0)'},{transform:'translateY(102%)'}],740,200);
+   animate(panels[0],[{transform:'translateY(0)',opacity:1},{transform:'translateY(-102%)',opacity:0}],reveal,hold);
+   animate(panels[1],[{transform:'translateY(0)',opacity:1},{transform:'translateY(102%)',opacity:0}],reveal,hold);
   }else if(id==='signature'){
-   animate(letters[0],[{opacity:0,transform:'translateY(9px)'},{opacity:1,transform:'translateY(0)',offset:.38},{opacity:1,transform:'translateY(0)',offset:.7},{opacity:0,transform:'translateY(-8px)'}],880);
-   animate(layer.querySelector('.studio-intro-line'),[{opacity:0,transform:'translateX(-50%) scaleX(0)'},{opacity:.55,transform:'translateX(-50%) scaleX(1)'}],570,100);
-   animate(panels[0],[{opacity:1},{opacity:0}],380,700);
+   animate(letters[0],[{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-18px)'}],800,hold);
+   animate(layer.querySelector('.studio-intro-line'),[{opacity:0,transform:'translateX(-50%) scaleX(0)'},{opacity:.55,transform:'translateX(-50%) scaleX(1)'}],400);
+   animate(panels[0],[{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-14px)'}],reveal,hold);
   }else{
-   animate(letters[0],[{opacity:0,transform:'scale(.97)'},{opacity:1,transform:'scale(1)',offset:.32},{opacity:1,transform:'scale(1)',offset:.62},{opacity:0,transform:'scale(1.025)'}],900);
-   animate(layer.querySelector('.studio-intro-frame'),[{opacity:.25,transform:'translate(-50%,-50%) scale(.92)'},{opacity:.45,transform:'translate(-50%,-50%) scale(1)',offset:.38},{opacity:0,transform:'translate(-50%,-50%) scale(1.6)'}],1050);
-   animate(panels[0],[{opacity:1},{opacity:0}],380,690);
+   animate(letters[0],[{opacity:1,transform:'scale(1) translateY(0)'},{opacity:0,transform:'scale(1.025) translateY(-10px)'}],800,hold);
+   animate(layer.querySelector('.studio-intro-frame'),[{opacity:.4,transform:'translate(-50%,-50%) scale(1)'},{opacity:0,transform:'translate(-50%,-50%) scale(1.6)'}],reveal,hold);
+   animate(panels[0],[{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-10px)'}],reveal,hold);
   }
   // CSS also hides the layer if this callback cannot run; input remains available.
-  timer=setTimeout(()=>{if(sequence===current)cancel()},1180);
+  timer=setTimeout(()=>{if(sequence===current)cancel()},1600);
   return true;
  }
  document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel()});
@@ -733,19 +786,20 @@
 (() => {
  'use strict';
  if(!document.body.classList.contains('studio'))return;
- const themes=window.KulturaStudioThemes,intros=window.KulturaStudioIntros,heroes=window.KulturaStudioHeroes;
- if(!themes||!intros||!heroes)return;
+ const themes=window.KulturaStudioThemes,intros=window.KulturaStudioIntros,heroes=window.KulturaStudioHeroes,ribbons=window.KulturaStudioRibbons;
+ if(!themes||!intros||!heroes||!ribbons)return;
  const url=new URL(location.href),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const groups=[
   {key:'palette',label:'Палитра',items:themes.options,apply:id=>themes.apply(id)},
   {key:'hero',label:'Первый экран',items:[{id:'original',title:'Текущий'},...heroes.options],apply:id=>heroes.apply(id)},
-  {key:'intro',label:'Вступление',items:intros.options,apply:id=>intros.play(id)}
+  {key:'intro',label:'Вступление',items:intros.options,apply:id=>intros.play(id)},
+  {key:'ribbon',label:'Лента',items:ribbons.options,apply:id=>ribbons.apply(id)}
  ];
  const current={};
  for(const group of groups){const requested=url.searchParams.get(group.key);current[group.key]=group.items.some(item=>item.id===requested)?requested:group.key==='palette'?(document.documentElement.dataset.studioTheme==='salon'?'salon':'mono'):group.items[0].id;}
- themes.apply(current.palette);heroes.apply(current.hero);
+ themes.apply(current.palette);heroes.apply(current.hero);ribbons.apply(current.ribbon);
  const panel=document.createElement('details');panel.className='studio-preview';
- panel.innerHTML='<summary>Варианты дизайна<span aria-hidden="true">+</span></summary><div class="studio-preview-body"><p>Временный просмотр оформления</p><div class="studio-preview-options"></div><button type="button" class="studio-preview-replay">Повторить вступление</button><span class="studio-preview-status" role="status" aria-live="polite"></span></div>';
+ panel.innerHTML='<summary><span class="studio-preview-label">Варианты дизайна</span><span class="studio-preview-mark" aria-hidden="true">+</span></summary><div class="studio-preview-body"><p>Выберите оформление</p><div class="studio-preview-options"></div><button type="button" class="studio-preview-replay">Повторить вступление</button><span class="studio-preview-status" role="status" aria-live="polite"></span></div>';
  const options=panel.querySelector('.studio-preview-options'),status=panel.querySelector('[role=status]');
  const buttons=new Map();
  function paint(group){const button=buttons.get(group.key),index=group.items.findIndex(item=>item.id===current[group.key]);button.querySelector('strong').textContent=group.items[index].title;button.querySelector('small').textContent=(index+1)+' / '+group.items.length;button.setAttribute('aria-label',group.label+': '+group.items[index].title+'. Следующий вариант');}
@@ -753,12 +807,19 @@
  for(const group of groups){
   const row=document.createElement('div'),label=document.createElement('span'),button=document.createElement('button');
   row.className='studio-preview-row';label.textContent=group.label;button.type='button';button.innerHTML='<strong></strong><small></small>';
-  button.addEventListener('click',()=>{const index=group.items.findIndex(item=>item.id===current[group.key]);current[group.key]=group.items[(index+1)%group.items.length].id;group.apply(current[group.key]);paint(group);remember();status.textContent=group.label+': '+group.items.find(item=>item.id===current[group.key]).title;if(group.key==='hero'){panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:reduced.matches?'auto':'smooth'});}});
+  button.addEventListener('click',()=>{
+   const index=group.items.findIndex(item=>item.id===current[group.key]);current[group.key]=group.items[(index+1)%group.items.length].id;
+   if(group.key==='intro'){panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:'instant'});}
+   group.apply(current[group.key]);paint(group);remember();status.textContent=group.label+': '+group.items.find(item=>item.id===current[group.key]).title;
+   if(group.key==='hero'){panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:reduced.matches?'auto':'smooth'});}
+  });
   row.append(label,button);options.append(row);buttons.set(group.key,button);paint(group);
  }
  panel.querySelector('.studio-preview-replay').addEventListener('click',()=>{panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:'instant'});intros.play(current.intro);});
  document.addEventListener('click',event=>{if(panel.open&&!panel.contains(event.target))panel.open=false;const choice=event.target.closest('[data-theme-choice]');if(choice){current.palette=choice.dataset.themeChoice;paint(groups[0]);remember();}});
+ addEventListener('storage',event=>{if(event.key==='kultura-theme'){current.palette=document.documentElement.dataset.studioTheme==='salon'?'salon':'mono';paint(groups[0]);remember();}});
  panel.addEventListener('keydown',event=>{if(event.key==='Escape'){panel.open=false;panel.querySelector('summary').focus();}});
- document.body.append(panel);
+ const headerSwitch=document.querySelector('.studio-theme-switch');
+ if(headerSwitch)headerSwitch.replaceWith(panel);else document.body.append(panel);
  intros.play(current.intro);
 })();
