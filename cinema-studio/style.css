@@ -384,7 +384,8 @@ html[data-studio-theme=mono] .studio .path-strip>i{background:#e9e5dd45}
 html[data-studio-theme=mono] .studio .direction-card{--r8-selection:#37342f}
 .studio .direction-card::before{content:'';position:absolute;inset:2px;z-index:5;border:2px solid var(--r8-selection);border-radius:inherit;opacity:0;pointer-events:none;transition:opacity .24s ease}
 .studio .direction-card::after{content:'';position:absolute;inset:-30% -65%;z-index:4;background:linear-gradient(110deg,transparent 44%,#ffffff26 50%,transparent 56%);opacity:0;transform:translateX(-45%);pointer-events:none}
-.studio .direction-card[aria-pressed=true]::before,.studio .direction-card:focus-visible::before{opacity:1}
+.studio .direction-card[aria-pressed=true]::before,
+html:not([data-studio-input=pointer]) .studio .direction-card:focus-visible::before{opacity:1}
 .studio .direction-card[aria-pressed=true]{transform:scale(1.015)}
 .studio .direction-card[aria-pressed=true]::after{animation:r8-direction-sheen .65s ease-out both}
 html[data-studio-theme=mono] .studio .direction-card[aria-pressed=true],html[data-studio-theme=mono] .studio .direction-card[aria-pressed=true]:hover{box-shadow:0 9px 26px #241e1616}
@@ -1099,6 +1100,42 @@ html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .stud
   .studio #directions .direction-card:active{transform:translate3d(0,-1px,0)}
   .studio #works .work-card{transition:translate .3s ease,box-shadow .3s ease}
   .studio #works .work-card:hover{translate:0 -2px;box-shadow:0 16px 30px #00000030}
+}
+/* Touch browsers can apply hover and active while a finger is scrolling. */
+@media(hover:none), (pointer:coarse){
+  .studio #directions .direction-card[aria-pressed=false]:hover{
+    box-shadow:var(--direction-rest-shadow,0 7px 26px #152e2010);
+  }
+  .studio #directions .direction-card[aria-pressed=false]:hover .direction-arrow{
+    background:var(--direction-rest-paper,#fffaf1);
+    color:var(--direction-rest-ink,#173b2d);
+  }
+  .studio #directions .direction-card:active img,
+  .studio #directions .direction-card:hover .direction-arrow svg,
+  .studio #services .service-select:active,
+  .studio #services .service-select:hover svg{
+    transform:none;
+  }
+  .studio #services .service-group summary{
+    -webkit-tap-highlight-color:transparent;
+  }
+  .studio #services .service-select:hover{
+    background:var(--service-rest-paper,#e5ebde);
+    color:var(--service-rest-ink,#173b2d);
+  }
+  html[data-studio-theme=mono] .studio{
+    --direction-rest-shadow:0 8px 25px #241e1612;
+    --direction-rest-paper:#fffdf8;
+    --direction-rest-ink:#242320;
+    --service-rest-paper:#e8e2d7;
+    --service-rest-ink:#242320;
+  }
+  html[data-studio-preview-theme][data-studio-theme] .studio{
+    --direction-rest-paper:var(--pv-paper);
+    --direction-rest-ink:var(--pv-paper-ink);
+    --service-rest-paper:var(--pv-accent);
+    --service-rest-ink:var(--pv-on-accent);
+  }
 }
 @media(prefers-reduced-motion:reduce){
   .studio #directions .direction-card,

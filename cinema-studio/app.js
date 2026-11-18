@@ -151,13 +151,13 @@
  let pageHidden=false;
  const custom=document.querySelector('[data-request-custom]');
  document.addEventListener('click',event=>{const pick=event.target.closest('[data-direction],[data-work-filter]');if(custom&&pick)custom.dataset.requestCategory=pick.dataset.direction||pick.dataset.workFilter});
- // Finite entrances only. Content stays visible if motion support is unavailable.
+ // Keep touch cards at full opacity as they pass under a scrolling finger.
  const entrances=new Set();
  const revealCards=[...document.querySelectorAll('.direction-card,.work-card,.work-custom')].filter(card=>!card.classList.contains('reveal'));
  const ownEntrances=new WeakMap();
  let revealObserver=null;
  function settleEntrances(){for(const motion of entrances)motion.cancel();entrances.clear()}
- if(!reduced.matches&&'IntersectionObserver'in window){
+ if(!reduced.matches&&matchMedia('(hover: hover) and (pointer: fine)').matches&&'IntersectionObserver'in window){
   revealObserver=new IntersectionObserver(entries=>{
    for(const entry of entries){
     if(!entry.isIntersecting||entry.target.hidden)continue;
