@@ -401,6 +401,10 @@ html.motion .studio .reveal:not(.shown){transform:translate3d(0,16px,0)}
 
 /* Full, uncropped salon signature rather than an avatar. */
 .studio .hero-image picture{display:contents}
+.studio .studio-marquee-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:30px;color:#d9c7a0}
+.studio .studio-marquee-icon svg{display:block;width:28px;height:28px;stroke-width:1.5}
+html[data-studio-theme=mono] .studio .studio-marquee-icon{color:#ded6c6}
+@media(max-width:620px){.studio .studio-marquee-icon{width:26px}.studio .studio-marquee-icon svg{width:25px;height:25px}}
 .studio .brand-real-logo{width:58px;height:58px;min-width:58px;padding:3px;border:1px solid #ffffff45;border-radius:9px;overflow:visible;background:#fff;box-sizing:border-box}
 .studio .brand-real-logo img{width:100%;height:100%;object-fit:contain;border-radius:0}
 .studio .trust-rating>strong span,html[data-studio-theme=mono] .studio .trust-rating>strong span{color:#b58221}
