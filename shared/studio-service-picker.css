@@ -41,6 +41,7 @@
   overflow-x:hidden;
   overflow-y:auto;
   overscroll-behavior:contain;
+  -webkit-tap-highlight-color:transparent;
   scrollbar-gutter:stable;
   scrollbar-width:thin;
   scrollbar-color:var(--rq-muted) transparent;
