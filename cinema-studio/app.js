@@ -144,7 +144,7 @@
  setTheme(html.dataset.studioTheme,false);
 })();
 
-/* Studio-only motion: CSS ribbon, one bounded deck timeout, no idle RAF loop. */
+/* Studio-only entrances and CSS ribbon. Salon gallery is a separate manual module. */
 (() => {
  'use strict';
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -189,63 +189,6 @@
   if('IntersectionObserver'in window)new IntersectionObserver(entries=>{visible=entries.some(e=>e.isIntersecting&&e.intersectionRatio>=.4);update()},{threshold:[0,.4,1]}).observe(ribbon);else visible=true;
   document.addEventListener('visibilitychange',update);reduced.addEventListener('change',update);addEventListener('pagehide',()=>{pageHidden=true;update()});addEventListener('pageshow',()=>{pageHidden=false;update()});update();
  }
- const deck=document.querySelector('[data-salon-deck]');if(!deck)return;
- const slides=JSON.parse(document.getElementById('studio-media-data').textContent).slides;
- const stage=deck.querySelector('[data-deck-stage]'),pause=deck.querySelector('[data-deck-pause]');
- let current=deck.querySelector('[data-deck-current]'),incoming=deck.querySelector('[data-deck-incoming]');
- const counter=deck.querySelector('[data-deck-counter]'),announcer=deck.querySelector('[data-deck-announcer]');
- const TRANSITION_MS=460,AUTO_MS=3500;
- let index=0,target=0,busy=false,preparing=false,visible=false,inView=false,manualPaused=false,focus=false,keyboardInput=false,autoTimer=0,finishTimer=0,queued=0,queuedManual=true,transitionManual=false,pointer=null,skipClickUntil=0,loadToken=0,warming=null,prefetch=null;
- const readySrc=new WeakMap(),pendingDecode=new WeakMap();
- const wrap=value=>(value+slides.length)%slides.length;
- const paint=(card,at)=>{const slide=slides[at],image=card.querySelector('img'),src='../assets/'+slide.file;if(image.getAttribute('src')!==src){readySrc.delete(image);image.src=src}image.alt=slide.caption+' — настоящее фото салона';if(slide.width&&slide.height){image.width=slide.width;image.height=slide.height}card.querySelector('.deck-caption').textContent=slide.caption;return image};
- const stopAuto=()=>{clearTimeout(autoTimer);autoTimer=0;deck.dataset.deckAutoActive='false'};
- const obstructed=()=>Boolean(document.querySelector('dialog[open]'));
- const canAuto=()=>visible&&!manualPaused&&!focus&&!pointer&&!document.hidden&&!pageHidden&&!reduced.matches&&!busy&&!obstructed();
- const state=()=>{const image=incoming.querySelector('img'),ready=readySrc.get(image)===image.getAttribute('src');deck.dataset.deckIndex=String(index);deck.dataset.deckBusy=String(busy);deck.dataset.deckPreloadCount=ready?'1':'0';deck.dataset.deckPredecodeActive=String(Boolean(prefetch&&!prefetch.settled));deck.dataset.deckNextReady=String(ready);deck.dataset.deckState=reduced.matches?'reduced':document.hidden||pageHidden?'hidden':obstructed()?'covered':manualPaused?'manual':preparing?'loading':busy?'transitioning':!visible?'offscreen':focus||pointer?'interaction':'idle';stage.setAttribute('aria-busy',String(preparing));pause.disabled=reduced.matches;pause.setAttribute('aria-pressed',String(manualPaused||reduced.matches));pause.setAttribute('aria-label',reduced.matches?'Автосмена фото отключена: уменьшение движения':manualPaused?'Продолжить смену фотографий':'Приостановить смену фотографий');pause.querySelector('path').setAttribute('d',manualPaused?'M8 5l10 7-10 7Z':'M8 5v14M16 5v14')};
- function predecode(at){
-  const src='../assets/'+slides[wrap(at)].file;if(prefetch?.src===src&&!prefetch.image.isConnected)return prefetch.promise;
-  prefetch?.cancel();const image=new Image();image.decoding='async';const entry={src,image,promise:null,cancel:null,settled:false};
-  entry.promise=new Promise(resolve=>{const done=ok=>{if(entry.settled)return;entry.settled=true;clearTimeout(timeout);image.onload=image.onerror=null;if(!ok&&prefetch===entry)prefetch=null;resolve(ok?image:null)};const timeout=setTimeout(()=>done(false),3500);entry.cancel=()=>{if(!entry.settled){image.removeAttribute('src');done(false)}};image.onerror=()=>done(false);image.onload=()=>{if(image.decode)image.decode().then(()=>done(true),()=>done(false));else done(image.naturalWidth>0)};image.src=src;});prefetch=entry;state();return entry.promise;
- }
- function decodeCard(card,at){
-  const image=paint(card,wrap(at)),src=image.getAttribute('src');image.loading='eager';image.decoding='async';
-  if(readySrc.get(image)===src&&image.complete&&image.naturalWidth>0)return Promise.resolve(true);
-  const previous=pendingDecode.get(image);if(previous?.src===src)return previous.promise;
-  const entry={src,promise:null};entry.promise=new Promise(resolve=>{let settled=false;const done=ok=>{if(settled)return;settled=true;clearTimeout(timeout);image.removeEventListener('load',loaded);image.removeEventListener('error',failed);const valid=ok&&image.getAttribute('src')===src&&image.naturalWidth>0;if(valid)readySrc.set(image,src);if(pendingDecode.get(image)===entry)pendingDecode.delete(image);resolve(valid)};const timeout=setTimeout(()=>done(false),3500),failed=()=>done(false),loaded=()=>done(image.naturalWidth>0);if(image.decode)image.decode().then(()=>done(true),()=>done(false));else{image.addEventListener('load',loaded,{once:true});image.addEventListener('error',failed,{once:true});if(image.complete)loaded();}});pendingDecode.set(image,entry);return entry.promise;
- }
- async function prepareCard(card,at,relevant){const old=card.querySelector('img'),src='../assets/'+slides[wrap(at)].file;if(old.getAttribute('src')!==src){const image=await predecode(at);if(!image||!relevant())return false;image.draggable=false;image.loading='eager';image.decoding='async';image.width=slides[wrap(at)].width||old.width;image.height=slides[wrap(at)].height||old.height;image.className=old.className;old.replaceWith(image);}if(!relevant())return false;return decodeCard(card,at);}
- function warmNext(){if(!visible||busy||document.hidden||pageHidden||obstructed())return;const next=wrap(index+1),at=index,card=incoming,token=loadToken;if(warming?.index===at&&warming?.card===card)return;warming={index:at,card};const relevant=()=>visible&&!busy&&!document.hidden&&!pageHidden&&!obstructed()&&index===at&&incoming===card&&loadToken===token;prepareCard(card,next,relevant).then(ok=>{if(warming?.index===at&&warming?.card===card)warming=null;if(ok&&relevant())state()});}
- const schedule=()=>{stopAuto();state();warmNext();if(canAuto()){autoTimer=setTimeout(()=>{autoTimer=0;deck.dataset.deckAutoActive='false';refreshVisibility();if(canAuto())change(1,false)},AUTO_MS);deck.dataset.deckAutoActive='true'}};
- function commit(at,manual){stage.classList.remove('is-changing');const old=current;current=incoming;incoming=old;current.removeAttribute('data-deck-incoming');current.setAttribute('data-deck-current','');current.removeAttribute('aria-hidden');incoming.removeAttribute('data-deck-current');incoming.setAttribute('data-deck-incoming','');incoming.setAttribute('aria-hidden','true');index=wrap(at);counter.textContent=String(index+1);stage.setAttribute('aria-label',slides[index].caption+'. Следующее фото салона');if(manual)announcer.textContent=slides[index].caption+', '+(index+1)+' из '+slides.length;deck.dispatchEvent(new CustomEvent('kultura:deckchange',{bubbles:true,detail:{index,total:slides.length,filename:slides[index].file,manual}}));}
- function finish(continueQueue=true){clearTimeout(finishTimer);finishTimer=0;if(busy){commit(target,transitionManual);busy=false}state();if(continueQueue&&queued){const step=queued,manual=queuedManual;queued=0;change(step,manual)}else{queued=0;schedule()}}
- async function change(step,manual=true){
-  stopAuto();if(busy){queued=step<0?-1:1;queuedManual=manual;return}
-  if((!visible&&!manual)||document.hidden||pageHidden||obstructed())return;
-  target=wrap(index+(step<0?-1:1));transitionManual=manual;
-  busy=true;preparing=true;warming=null;const token=++loadToken,card=incoming,at=target;state();const ready=await prepareCard(card,at,()=>token===loadToken&&incoming===card&&!document.hidden&&!pageHidden&&!obstructed()&&(visible||manual));
-  if(token!==loadToken)return;
-  preparing=false;if(!ready||(!visible&&!manual)||document.hidden||pageHidden||obstructed()){busy=false;queued=0;if(!ready&&manual)announcer.textContent='Не удалось загрузить фотографию. Попробуйте ещё раз.';schedule();return}
-  if(reduced.matches){commit(target,manual);busy=false;if(queued){const next=queued,nextManual=queuedManual;queued=0;change(next,nextManual)}else schedule();return}
-  stage.classList.add('is-changing');state();finishTimer=setTimeout(()=>finish(),TRANSITION_MS+100);
- }
- stage.addEventListener('animationend',event=>{if(busy&&!preparing&&event.target===incoming&&event.animationName==='r8-deck-in')finish()});
- const suspend=()=>{stopAuto();queued=0;pointer=null;warming=null;if(preparing){loadToken++;preparing=false;busy=false;stage.classList.remove('is-changing')}else if(busy)finish(false);prefetch?.cancel();prefetch=null;stopAuto();state()};
- deck.querySelector('[data-deck-next]').addEventListener('click',()=>change(1));deck.querySelector('[data-deck-prev]').addEventListener('click',()=>change(-1));
- pause.addEventListener('click',()=>{manualPaused=!manualPaused;queued=0;if(manualPaused)suspend();else schedule();state()});
- stage.addEventListener('click',()=>{if(performance.now()>=skipClickUntil)change(1)});
- stage.addEventListener('pointerdown',e=>{if(e.button!==0)return;pointer={x:e.clientX,y:e.clientY,id:e.pointerId,swiped:false};stage.setPointerCapture?.(e.pointerId);stopAuto()});
- stage.addEventListener('pointermove',e=>{if(!pointer||pointer.id!==e.pointerId||pointer.swiped)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(Math.abs(dx)>42&&Math.abs(dx)>Math.abs(dy)*1.25){pointer.swiped=true;skipClickUntil=performance.now()+650;if(e.cancelable)e.preventDefault();change(dx<0?1:-1)}});
- stage.addEventListener('pointerup',e=>{if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y,swiped=pointer.swiped;pointer=null;if(stage.hasPointerCapture?.(e.pointerId))stage.releasePointerCapture(e.pointerId);if(!swiped&&Math.abs(dx)>38&&Math.abs(dx)>Math.abs(dy)*1.2){skipClickUntil=performance.now()+650;change(dx<0?1:-1)}else schedule()});stage.addEventListener('pointercancel',()=>{pointer=null;schedule()});
- document.addEventListener('pointerdown',()=>{keyboardInput=false;if(focus){focus=false;schedule()}},true);
- document.addEventListener('keydown',event=>{if(['Tab','ArrowLeft','ArrowRight','Enter',' '].includes(event.key)){keyboardInput=true;focus=deck.contains(document.activeElement);if(focus){stopAuto();state()}}},true);
- deck.addEventListener('focusin',()=>{focus=keyboardInput;if(focus)stopAuto();state()});deck.addEventListener('focusout',()=>{focus=keyboardInput&&deck.contains(document.activeElement);schedule()});
- function refreshVisibility(){const r=stage.getBoundingClientRect(),height=innerHeight,width=innerWidth,top=Math.min(96,Math.max(0,document.querySelector('.header')?.getBoundingClientRect().bottom||0));const seenHeight=Math.max(0,Math.min(r.bottom,height-12)-Math.max(r.top,top)),seenWidth=Math.max(0,Math.min(r.right,width)-Math.max(r.left,0));const next=r.width>0&&r.height>0&&seenHeight>=Math.min(r.height,height-top-12)*.72&&seenWidth>=Math.min(r.width,width)*.85;const changed=next!==visible;inView=seenHeight>0&&seenWidth>0;visible=next;deck.dataset.deckVisible=String(visible);deck.dataset.deckInView=String(inView);if(!inView||obstructed())suspend();else if(!visible){stopAuto();if(busy&&!transitionManual)suspend();else state()}else if(changed){warmNext();schedule();}}
- if('IntersectionObserver'in window)new IntersectionObserver(refreshVisibility,{threshold:[0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1]}).observe(stage);else{let fallbackTimer=0;addEventListener('scroll',()=>{if(!fallbackTimer)fallbackTimer=setTimeout(()=>{fallbackTimer=0;refreshVisibility()},100)},{passive:true});}
- addEventListener('resize',refreshVisibility,{passive:true});
- const modalObserver=new MutationObserver(records=>{if(records.some(r=>r.target.tagName==='DIALOG')){refreshVisibility();if(visible&&!obstructed())schedule()}});modalObserver.observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
- document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();else schedule()});reduced.addEventListener('change',()=>{if(reduced.matches)suspend();else schedule();state()});
- addEventListener('pagehide',()=>{pageHidden=true;suspend()});addEventListener('pageshow',()=>{pageHidden=false;refreshVisibility();schedule()});refreshVisibility();state();
 })();
 
 /* One location section: native anchors work even without scripting. No geolocation or form data. */
@@ -286,7 +229,7 @@
  const mount=location.querySelector('[data-map-mount]'),button=location.querySelector('[data-load-studio-map]');let started=false;
  function loadMap(){
   if(started||!mount)return;started=true;mount.dataset.mapState='loading';
-  const frame=document.createElement('iframe');frame.src=config.embed;frame.title='Культура Стиля на Яндекс Картах';frame.loading='lazy';frame.referrerPolicy='no-referrer';frame.setAttribute('allowfullscreen','');frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups');
+  const frame=document.createElement('iframe');frame.src=config.embed;frame.title='Культура Стиля на OpenStreetMap';frame.loading='lazy';frame.referrerPolicy='no-referrer';frame.setAttribute('allowfullscreen','');frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups');
   frame.addEventListener('load',()=>{mount.dataset.mapState='loaded';location.querySelector('[data-map-placeholder]')?.remove();},{once:true});mount.append(frame);
  }
  button?.addEventListener('click',loadMap);
@@ -362,4 +305,183 @@
  const mount=new MutationObserver(()=>{if(install())mount.disconnect();});
  mount.observe(document.body,{childList:true,subtree:true});
  window.addEventListener('pagehide',()=>mount.disconnect(),{once:true});
+})();
+
+/* R14 salon-only manual gallery. Decode the connected incoming bitmap before exposing it. */
+(() => {
+ 'use strict';
+ const deck=document.querySelector('.studio-gallery[data-salon-deck]');
+ if(!deck)return;
+ const slides=JSON.parse(document.getElementById('studio-media-data').textContent).slides;
+ const stage=deck.querySelector('[data-deck-stage]'),counter=deck.querySelector('[data-deck-counter]');
+ const announcer=deck.querySelector('[data-deck-announcer]'),status=deck.querySelector('[data-gallery-status]');
+ const openButton=deck.querySelector('[data-gallery-action=open]');
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ let current=deck.querySelector('[data-deck-current]'),incoming=deck.querySelector('[data-deck-incoming]');
+ let index=0,target=0,busy=false,preparing=false,visible=false,pageHidden=false,queued=0,token=0;
+ let finishTimer=0,pointer=null,skipClickUntil=0,warming=null,viewer=null,viewerToken=0,locked=null;
+ const ready=new WeakMap(),pending=new WeakMap();
+ const wrap=value=>(value+slides.length)%slides.length;
+ const blocked=()=>Boolean(document.querySelector('dialog[open]'));
+ const active=()=>visible&&!document.hidden&&!pageHidden&&!blocked();
+ const notice=text=>{status.textContent=text;status.hidden=!text};
+ const state=()=>{deck.dataset.deckIndex=String(index);deck.dataset.deckBusy=String(busy);deck.dataset.deckAutoActive='false';deck.dataset.deckVisible=String(visible);deck.dataset.deckState=document.hidden||pageHidden?'hidden':blocked()?'covered':!visible?'offscreen':preparing?'loading':busy?'transitioning':'manual';stage.setAttribute('aria-busy',String(preparing));const image=incoming.querySelector('img');deck.dataset.deckNextReady=String(ready.get(image)===image.getAttribute('src')&&image.complete&&image.naturalWidth>0)};
+ function paint(card,at){const item=slides[wrap(at)],image=card.querySelector('img'),src='../assets/'+item.file;if(image.getAttribute('src')!==src){pending.get(image)?.cancel();ready.delete(image);image.src=src}image.alt=item.caption+' — настоящее фото салона';image.width=item.width;image.height=item.height;image.loading='eager';image.decoding='async';card.querySelector('.deck-caption').textContent=item.caption;return image}
+ function decode(card,at){
+  const image=paint(card,at),src=image.getAttribute('src');
+  if(ready.get(image)===src&&image.complete&&image.naturalWidth>0)return Promise.resolve(true);
+  const old=pending.get(image);if(old?.src===src)return old.promise;
+  const entry={src,promise:null,cancel:null};
+  entry.promise=new Promise(resolve=>{
+   let settled=false;
+   const done=ok=>{if(settled)return;settled=true;clearTimeout(timer);image.removeEventListener('load',loaded);image.removeEventListener('error',failed);const valid=Boolean(ok&&image.isConnected&&image.getAttribute('src')===src&&image.complete&&image.naturalWidth>0);if(valid)ready.set(image,src);if(pending.get(image)===entry)pending.delete(image);resolve(valid)};
+   const failed=()=>done(false),loaded=()=>done(image.naturalWidth>0),timer=setTimeout(()=>done(false),12000);
+   entry.cancel=()=>done(false);
+   image.addEventListener('error',failed,{once:true});
+   if(image.decode)image.decode().then(()=>done(true),failed);
+   else{image.addEventListener('load',loaded,{once:true});if(image.complete)loaded()}
+  });pending.set(image,entry);return entry.promise;
+ }
+ async function warm(){
+  if(!active()||busy||warming)return;
+  const at=index,card=incoming,operation=token;
+  warming={card,at};
+  const first=await decode(current,index);
+  if(first&&active()&&!busy&&index===at&&token===operation)await decode(card,wrap(at+1));
+  if(warming?.card===card&&warming?.at===at)warming=null;
+  state();
+ }
+ function commit(){
+  const image=incoming.querySelector('img');
+  if(ready.get(image)!==image.getAttribute('src')||!image.complete||!image.naturalWidth)return false;
+  const old=current;current=incoming;incoming=old;
+  current.removeAttribute('data-deck-incoming');current.setAttribute('data-deck-current','');current.removeAttribute('aria-hidden');
+  incoming.removeAttribute('data-deck-current');incoming.setAttribute('data-deck-incoming','');incoming.setAttribute('aria-hidden','true');
+  stage.classList.remove('is-changing');index=target;counter.textContent=String(index+1);
+  openButton.setAttribute('aria-label','Открыть фотографию: '+slides[index].caption);
+  announcer.textContent=slides[index].caption+', '+(index+1)+' из '+slides.length;
+  deck.dispatchEvent(new CustomEvent('kultura:deckchange',{bubbles:true,detail:{index,total:slides.length,filename:slides[index].file,manual:true}}));
+  return true;
+ }
+ function finish(continueQueue=true){
+  clearTimeout(finishTimer);finishTimer=0;
+  if(busy&&!preparing)commit();
+  stage.classList.remove('is-changing');busy=false;preparing=false;notice('');state();
+  if(continueQueue&&queued&&active()){const step=queued;queued=0;change(step)}else{queued=0;warm()}
+ }
+ async function change(step){
+  if(busy){queued=step<0?-1:1;return}
+  if(!active())return;
+  target=wrap(index+(step<0?-1:1));busy=true;preparing=true;warming=null;
+  const operation=++token,card=incoming;notice('Загружаем фото…');state();
+  const first=await decode(current,index);
+  const prepared=first&&operation===token&&active()&&await decode(card,target);
+  if(operation!==token)return;
+  preparing=false;
+  if(!prepared||!active()){busy=false;queued=0;notice(prepared?'':'Фото не загрузилось. Нажмите ещё раз.');state();return}
+  notice('');
+  if(reduced.matches){finish();return}
+  stage.classList.add('is-changing');state();finishTimer=setTimeout(()=>finish(),460);
+ }
+ stage.addEventListener('animationend',event=>{if(busy&&!preparing&&event.target===incoming&&event.animationName==='studio-gallery-in')finish()});
+ function suspend(){
+  queued=0;pointer=null;warming=null;viewerToken++;
+  if(preparing){token++;busy=false;preparing=false;stage.classList.remove('is-changing')}
+  else if(busy)finish(false);
+  pending.get(incoming.querySelector('img'))?.cancel();
+  notice('');state();
+ }
+ function measure(){
+  const r=stage.getBoundingClientRect(),header=Math.max(0,document.querySelector('.header')?.getBoundingClientRect().bottom||0);
+  const seenH=Math.max(0,Math.min(r.bottom,innerHeight)-Math.max(r.top,Math.min(header,110))),seenW=Math.max(0,Math.min(r.right,innerWidth)-Math.max(r.left,0));
+  const next=seenH>Math.min(90,r.height*.2)&&seenW>r.width*.5,changed=next!==visible;visible=next;
+  if(!active())suspend();else if(changed)warm();state();
+ }
+ if('IntersectionObserver'in window)new IntersectionObserver(measure,{threshold:[0,.1,.2,.4,.6,1]}).observe(stage);
+ let scrollFrame=0;addEventListener('scroll',()=>{if(!scrollFrame)scrollFrame=requestAnimationFrame(()=>{scrollFrame=0;measure()})},{passive:true});
+ addEventListener('resize',measure,{passive:true});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();else{measure();warm()}});
+ addEventListener('pagehide',()=>{pageHidden=true;suspend()});addEventListener('pageshow',()=>{pageHidden=false;measure()});
+ reduced.addEventListener('change',()=>{if(reduced.matches&&busy&&!preparing)finish(false);state()});
+ new MutationObserver(records=>{if(records.some(item=>item.target.tagName==='DIALOG')){if(blocked())suspend();else{measure();warm()}}}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
+ stage.addEventListener('pointerdown',event=>{if(event.button!==0||!active())return;pointer={id:event.pointerId,x:event.clientX,y:event.clientY};stage.setPointerCapture?.(event.pointerId)});
+ stage.addEventListener('pointerup',event=>{
+  if(!pointer||pointer.id!==event.pointerId)return;
+  const dx=event.clientX-pointer.x,dy=event.clientY-pointer.y;pointer=null;
+  if(stage.hasPointerCapture?.(event.pointerId))stage.releasePointerCapture(event.pointerId);
+  if(Math.abs(dx)>38&&Math.abs(dx)>Math.abs(dy)*1.25){skipClickUntil=performance.now()+650;change(dx<0?1:-1)}
+ });
+ stage.addEventListener('pointercancel',()=>{pointer=null;skipClickUntil=performance.now()+100});
+ stage.addEventListener('click',event=>{
+  if(performance.now()<skipClickUntil)return;
+  const control=event.target.closest('[data-gallery-action]');
+  let action=control?.dataset.galleryAction;
+  if(event.detail!==0){const r=stage.getBoundingClientRect(),x=(event.clientX-r.left)/r.width;action=x<.24?'prev':x>.76?'next':'open'}
+  if(action==='prev')change(-1);else if(action==='next')change(1);else if(action==='open')openPhoto();
+ });
+ stage.addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();change(event.key==='ArrowLeft'?-1:1)}});
+ function createViewer(){
+  if(viewer)return viewer;
+  viewer=document.createElement('dialog');viewer.id='salon-photo-viewer';viewer.className='studio-salon-viewer';viewer.setAttribute('aria-labelledby','salon-viewer-title');
+  viewer.innerHTML='<div class="studio-salon-viewer-header"><h2 id="salon-viewer-title"></h2><button type="button" class="studio-salon-viewer-close" data-gallery-close aria-label="Закрыть фотографию">×</button></div><img class="studio-salon-viewer-photo" alt="" decoding="async">';
+  document.body.append(viewer);
+  viewer.querySelector('[data-gallery-close]').addEventListener('click',()=>viewer.close());
+  viewer.addEventListener('click',event=>{if(event.target!==viewer)return;const r=viewer.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)viewer.close()});
+  viewer.addEventListener('close',()=>{
+   if(locked){const saved=locked;locked=null;Object.assign(document.body.style,saved.styles);scrollTo({top:saved.y,behavior:'instant'})}
+   openButton.focus({preventScroll:true});measure();warm();
+  });
+  return viewer;
+ }
+ async function openPhoto(){
+  if(busy||!active())return;
+  const operation=++viewerToken,at=index,image=current.querySelector('img');
+  if(!await decode(current,index)||operation!==viewerToken||!active())return;
+  const dialog=createViewer(),photo=dialog.querySelector('img'),src=image.getAttribute('src');
+  photo.src=src;photo.alt=image.alt;photo.width=image.width;photo.height=image.height;dialog.querySelector('h2').textContent=slides[index].caption;
+  try{if(photo.decode)await photo.decode()}catch{return}
+  if(operation!==viewerToken||at!==index||!active()||!photo.complete||!photo.naturalWidth)return;
+  window.StudioDialogMotion?.enhance(dialog);
+  const body=document.body,y=scrollY,width=body.getBoundingClientRect().width;
+  locked={y,styles:{position:body.style.position,top:body.style.top,width:body.style.width,overflow:body.style.overflow}};
+  Object.assign(body.style,{position:'fixed',top:'-'+y+'px',width:width+'px',overflow:'clip'});
+  try{dialog.showModal();dialog.querySelector('button').focus({preventScroll:true})}catch{Object.assign(body.style,locked.styles);locked=null;scrollTo({top:y,behavior:'instant'})}
+ }
+ measure();state();
+})();
+
+/* Original measurement diagram and visible required marks; no form values or requests change. */
+(() => {
+ 'use strict';
+ function markRequired(root){
+  for(const label of root.querySelectorAll('label,.rq-reference-title')){
+   const walker=document.createTreeWalker(label,NodeFilter.SHOW_TEXT),texts=[];
+   while(walker.nextNode()){const node=walker.currentNode;if(node.textContent.includes('*')&&!node.parentElement.closest('.rq-required-mark'))texts.push(node);}
+   for(const node of texts){const fragment=document.createDocumentFragment(),parts=node.textContent.split('*');parts.forEach((text,index)=>{if(index){const mark=document.createElement('span');mark.className='rq-required-mark';mark.textContent='*';fragment.append(mark);}fragment.append(document.createTextNode(text));});node.replaceWith(fragment);}
+  }
+ }
+ function init(){
+  const root=document.querySelector('[data-request-root][data-booking-mode]'),panel=root?.querySelector('[data-rq-tattoo]');
+  if(!panel)return false;
+  if(root.dataset.tattooGuideReady==='true')return true;
+  markRequired(root);
+  if(!panel.querySelector('[data-tattoo-measure-guide]')){
+   const guide=document.createElement('details');guide.className='studio-tattoo-guide';guide.dataset.tattooMeasureGuide='';
+   guide.innerHTML='<summary>Как измерить татуировку</summary><figure><svg viewBox="0 0 280 196" role="img" aria-labelledby="tattoo-guide-title tattoo-guide-desc" xmlns="http://www.w3.org/2000/svg"><title id="tattoo-guide-title">Длина и ширина рисунка</title><desc id="tattoo-guide-desc">Условный орнамент: длина измеряется сверху вниз, ширина — между крайними боковыми точками. Числа ниже приведены для примера.</desc><defs><marker id="tattoo-guide-arrow" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M7 1 1 4l6 3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></marker></defs><g class="tattoo-guide-art" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M123 24c-9 12-9 20 0 28 9-8 9-16 0-28Z"/><path d="M123 52v78m0-60c-18-2-27-11-29-22 16 0 25 7 29 22Zm0 19c19-2 28-11 30-22-17 0-26 7-30 22Zm0 20c-15-1-23-8-25-18 13 0 22 6 25 18Z"/><path d="m123 130-8 8 8 10 8-10-8-8Zm-20-50-4 4m47 19 4 4m-27-92v-3"/><circle cx="123" cy="158" r="1.5"/><circle cx="85" cy="44" r="1"/><circle cx="160" cy="63" r="1"/></g><g class="tattoo-guide-extensions" fill="none" stroke="currentColor" stroke-width=".8" stroke-dasharray="2 3"><path d="M136 24h52m-51 134h51M85 56v122m75-103v103"/></g><g class="tattoo-guide-dimensions" fill="none" stroke="currentColor" stroke-width="1" marker-start="url(#tattoo-guide-arrow)" marker-end="url(#tattoo-guide-arrow)"><path d="M188 27v128M89 178h67"/></g><g class="tattoo-guide-labels" fill="currentColor" stroke="none" font-family="Manrope,Arial,sans-serif" font-size="17" font-weight="600"><text x="201" y="94">Длина<tspan class="tattoo-guide-star">*</tspan></text><text x="123" y="195" text-anchor="middle">Ширина<tspan class="tattoo-guide-star">**</tspan></text></g></svg><figcaption><span>* Длина — например, 20 см</span><span>** Ширина — например, 8 см</span><small>Схема для примера, не работа салона</small></figcaption></figure>';
+   panel.append(guide);
+  }
+  // The reference label gains its required star only when tattoo is selected later.
+  const labels=new MutationObserver(()=>markRequired(root));
+  const watchLabels=()=>root.querySelectorAll('label,.rq-reference-title').forEach(label=>labels.observe(label,{subtree:true,childList:true,characterData:true}));
+  watchLabels();
+  root.addEventListener('kultura:request-selection',()=>{watchLabels();markRequired(root);});
+  root.dataset.tattooGuideReady='true';
+  addEventListener('pagehide',()=>labels.disconnect(),{once:true});
+  return true;
+ }
+ if(!init()){
+  const observer=new MutationObserver(()=>{if(init())observer.disconnect()});
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  addEventListener('pagehide',()=>observer.disconnect(),{once:true});
+ }
 })();

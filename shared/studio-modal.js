@@ -129,15 +129,20 @@
     origin=value.trigger||document.activeElement;position=window.scrollY;
     document.body.classList.remove('menu-open');
     const menu=document.querySelector('.menu-toggle');menu?.setAttribute('aria-expanded','false');
-    restore={position:document.body.style.position,top:document.body.style.top,width:document.body.style.width};
-    document.body.style.position='fixed';document.body.style.top=-position+'px';document.body.style.width='100%';
+    const bodyWidth=document.body.getBoundingClientRect(),root=document.documentElement;
+    restore={body:{position:document.body.style.position,top:document.body.style.top,width:document.body.style.width,left:document.body.style.left,right:document.body.style.right,overflowX:document.body.style.overflowX,overflowY:document.body.style.overflowY},overflowY:root.style.overflowY};
+    // Keep a classic scrollbar's existing space; body:has(dialog[open]) otherwise removes it.
+    if(window.innerWidth-root.clientWidth>0)root.style.overflowY='scroll';
+    document.body.style.position='fixed';document.body.style.top=-position+'px';document.body.style.width=bodyWidth.width+'px';document.body.style.left=bodyWidth.left+'px';document.body.style.right='auto';
+    // Unlike hidden, clip does not make the locked body a new scroll container for sticky headers.
+    document.body.style.overflowX='clip';document.body.style.overflowY='clip';
     dialog.showModal();scroll.scrollTop=0;syncCompact(true);
     rq.querySelector('h2').textContent=value.custom?'Ваш собственный образ':'Детали вашего визита';
     close.focus({preventScroll:true});motion();
   }
   dialog.addEventListener('close',()=>{
     motion();
-    if(restore){Object.assign(document.body.style,restore);restore=null;window.scrollTo({top:position,behavior:'instant'});}
+    if(restore){Object.assign(document.body.style,restore.body);document.documentElement.style.overflowY=restore.overflowY;restore=null;window.scrollTo({top:position,behavior:'instant'});}
     const target=canRestoreFocus(origin)?origin:document.querySelector('.menu-toggle');
     if(canRestoreFocus(target))target.focus({preventScroll:true});origin=null;
   });
