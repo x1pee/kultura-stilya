@@ -123,6 +123,46 @@
       "sha256": "f01256c51cba779e9eeeb68dd6041dddd94c27dd0fc2e318ca3ad9a1dbcc748a"
     },
     {
+      "path": "assets/studio-media/salon-barber.webp",
+      "bytes": 94538,
+      "sha256": "83bcd4434525d987bd21c0d3ab38bd0570600c97eacca482d04050c5e9e989b9"
+    },
+    {
+      "path": "assets/studio-media/salon-chairs.webp",
+      "bytes": 74544,
+      "sha256": "33329d497e87523167dad6aeb8ebc82c73f37806fd42d3ce6e4ff60983cc4303"
+    },
+    {
+      "path": "assets/studio-media/salon-lounge.webp",
+      "bytes": 67702,
+      "sha256": "eef51457733cf77184eb857677a2084379885a67d8798663bc06a4d1a6ffc15e"
+    },
+    {
+      "path": "assets/studio-media/salon-main.webp",
+      "bytes": 75014,
+      "sha256": "77a2fe13c7882d1d0f0cd9904e78bb912b79e5674895224027e181ef5e7a4e13"
+    },
+    {
+      "path": "assets/studio-media/salon-nails.webp",
+      "bytes": 62464,
+      "sha256": "e54735271583831a1cbc2d6c65d96565c4afec0eb92c7d6a877af544861f7b30"
+    },
+    {
+      "path": "assets/studio-media/salon-reception.webp",
+      "bytes": 77236,
+      "sha256": "7e3e3363119945a792ddbecde365a129adc87f43578c1d3d391ef70f8573133c"
+    },
+    {
+      "path": "assets/studio-media/storefront-night.webp",
+      "bytes": 70088,
+      "sha256": "a359bed17254384e5b3c90c9d3f2c21905187b07762c2ac9cc5d5c54ead825a8"
+    },
+    {
+      "path": "assets/studio-media/storefront.webp",
+      "bytes": 128930,
+      "sha256": "9399dac8eb795dd7bfc49f50e2304d43bb0ec65159416b675b11eb3dff099a73"
+    },
+    {
       "path": "assets/studio-staff-2606825.jpg",
       "bytes": 4730,
       "sha256": "04ca11926cadc1452b292ff0d5dc36556f87b8a90154467ec0c4b803db1bdec9"
@@ -179,18 +219,18 @@
     },
     {
       "path": "cinema-studio/app.js",
-      "bytes": 18297,
-      "sha256": "226ce6d642179b5e4e145e138bfb9cd3ed97f92cd0f55d1fd7254960ef4825d5"
+      "bytes": 22542,
+      "sha256": "3d6da671fcd6a464af246e8ac73308b3540c6f6fe00f2cb36eb6e25506dc3b4f"
     },
     {
       "path": "cinema-studio/index.html",
-      "bytes": 55039,
-      "sha256": "db60f749289adf22edcdacb7b23eee20bd08c8e2938e8a68cdeea22e8a517619"
+      "bytes": 55800,
+      "sha256": "ff1bf889e49a28d4fe8b6b31f684f98394cad141db1aa5a75305f32e446ed0dd"
     },
     {
       "path": "cinema-studio/style.css",
-      "bytes": 80258,
-      "sha256": "6b6db7c618c10de750e990d4e0e0cc985226b456ae8473f45fff206a188d3d90"
+      "bytes": 82661,
+      "sha256": "86f14a5dd6c4e01d61da521b6eb3cc7b30ee58c747719d4a73b034c18eadf424"
     },
     {
       "path": "index.html",
@@ -204,8 +244,8 @@
     },
     {
       "path": "shared/request.js",
-      "bytes": 28498,
-      "sha256": "45ebe2b46ca63367a4d673ff419ea01cfe4fc6ba80793f7a6a1fe0e66fab9745"
+      "bytes": 29112,
+      "sha256": "faed9e936e4a1f48aa07e5376b5fef4ea20de9e34f7f81bbd0cc81aa507cbfda"
     },
     {
       "path": "shared/studio-booking.css",
@@ -214,8 +254,8 @@
     },
     {
       "path": "shared/studio-booking.js",
-      "bytes": 15779,
-      "sha256": "f26f34ef686abf1890eb2e795c34d1c39fc7476fcc2419c2bfd8461e6d57af12"
+      "bytes": 15858,
+      "sha256": "3b90a14aea9dba53a5835855de5bd0630fb8d574f321e7e0dc4ef24f2966538f"
     },
     {
       "path": "shared/studio-modal.css",
@@ -224,8 +264,8 @@
     },
     {
       "path": "shared/studio-modal.js",
-      "bytes": 8869,
-      "sha256": "abda03ae017cc4397b9bc3ae50ac92aa1c104d4a0aab94f061ad90afd5ba9151"
+      "bytes": 9224,
+      "sha256": "b7ba5fe053cd39877edf4f0af6cff903341b01fd3fdc0da3237346a08786f95e"
     },
     {
       "path": "shared/studio-request-data.js",

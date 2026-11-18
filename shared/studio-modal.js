@@ -7,7 +7,7 @@
   const dialog=document.createElement('dialog');dialog.id='studio-request-dialog';dialog.className='studio-request-dialog';dialog.setAttribute('aria-labelledby','studio-request-title');
   dialog.innerHTML='<header class="studio-request-header"><span id="studio-request-title">Ваш визит в Культуру Стиля</span><button type="button" data-dialog-close aria-label="Закрыть окно заявки">×</button></header><div class="studio-request-scroll"></div>';
   const scroll=dialog.querySelector('.studio-request-scroll');scroll.append(mount);document.body.append(dialog);
-  section.innerHTML='<div class="studio-request-invite"><div><p class="eyebrow">Начнём с вашей идеи</p><h2>Есть свой <em>образ?</em></h2><p>Покажите референс и расскажите мастеру, что хотите изменить</p></div><button type="button" data-open-request>Обсудить мой образ <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button></div>';
+  section.innerHTML='<div class="studio-request-invite"><div><h2>Есть свой <em>образ?</em></h2><p>Покажите референс и расскажите мастеру, что хотите изменить</p></div><button type="button" data-open-request>Обсудить мой образ <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button></div>';
   const rq=mount.querySelector('.rq');
   rq.classList.add('rq-compact');
   rq.querySelector('h2').textContent='Детали вашего визита';
@@ -70,6 +70,7 @@
   submit.classList.add('rq-orbit');
   let origin=null,position=0,restore=null,visible=false;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+  function canRestoreFocus(el){return Boolean(el?.isConnected&&el.getClientRects().length&&(el.checkVisibility?el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}):getComputedStyle(el).visibility!=='hidden'));}
   function motion(){submit.classList.toggle('is-orbiting',dialog.open&&visible&&!document.hidden&&!reduced.matches);}
   const observer=new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting||false;motion();},{root:scroll,threshold:.4});observer.observe(submit);
   function open(value={}){
@@ -86,7 +87,8 @@
   dialog.addEventListener('close',()=>{
     motion();
     if(restore){Object.assign(document.body.style,restore);restore=null;window.scrollTo({top:position,behavior:'instant'});}
-    if(origin?.isConnected)origin.focus({preventScroll:true});origin=null;
+    const target=canRestoreFocus(origin)?origin:document.querySelector('.menu-toggle');
+    if(canRestoreFocus(target))target.focus({preventScroll:true});origin=null;
   });
   close.onclick=()=>dialog.close();
   dialog.addEventListener('keydown',e=>{
@@ -98,7 +100,7 @@
     else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus({preventScroll:true});}
   });
   dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();});
-  document.addEventListener('click',e=>{const trigger=e.target.closest('a[href="#request"],[data-open-request]');if(!trigger)return;e.preventDefault();open({trigger});});
+  document.addEventListener('click',e=>{const trigger=e.target.closest('a[href="#request"],[data-open-request]');if(!trigger)return;e.preventDefault();if(trigger.matches('[data-open-request]'))window.KulturaRequest.select({custom:true,trigger});else open({trigger});});
   document.addEventListener('visibilitychange',motion);reduced.addEventListener('change',motion);
   window.KulturaRequest.setPresentationAdapter({open});
   window.addEventListener('pagehide',()=>{observer.disconnect();compactObserver.disconnect();if(dialog.open)dialog.close();});

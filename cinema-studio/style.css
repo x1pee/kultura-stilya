@@ -375,7 +375,10 @@ html[data-studio-theme=mono] .studio .path-strip>i{background:#e9e5dd45}
 .studio .deck-stage.is-changing [data-deck-incoming]{animation:r8-deck-in .46s cubic-bezier(.22,.76,.22,1) both}
 .studio .deck-stage.is-changing .deck-card{will-change:transform,opacity}
 .studio .deck-card{contain:paint}
-@keyframes r8-deck-in{from{opacity:.92;transform:translate(8%,9%) scale(.94) rotate(2deg)}to{opacity:1;transform:translate(0,0) scale(1) rotate(-.7deg)}}
+/* The visible incoming node becomes the current node without replacing its decoded bitmap. */
+.studio [data-deck-current]{opacity:1;transform:translate3d(0,0,0) scale(1) rotate(-.7deg)}
+.studio [data-deck-incoming]{opacity:1;transform:translate3d(6%,9%,0) scale(.96) rotate(3deg)}
+@keyframes r8-deck-in{from{opacity:.92;transform:translate3d(8%,9%,0) scale(.94) rotate(2deg)}to{opacity:1;transform:translate3d(0,0,0) scale(1) rotate(-.7deg)}}
 @keyframes r8-deck-out{from{opacity:1;transform:translate(0,0) scale(1) rotate(-.7deg)}to{opacity:0;transform:translate(-3%,-2%) scale(.985) rotate(-1.7deg)}}
 .studio .direction-card{--r8-selection:#2c4936;position:relative;outline:0;transform-origin:50% 50%;transition:transform .34s cubic-bezier(.22,.76,.22,1)}
 html[data-studio-theme=mono] .studio .direction-card{--r8-selection:#37342f}
@@ -387,6 +390,30 @@ html[data-studio-theme=mono] .studio .direction-card{--r8-selection:#37342f}
 html[data-studio-theme=mono] .studio .direction-card[aria-pressed=true],html[data-studio-theme=mono] .studio .direction-card[aria-pressed=true]:hover{box-shadow:0 9px 26px #241e1616}
 html[data-studio-theme=mono] .studio .direction-card[aria-pressed=true] .direction-copy{box-shadow:none}
 @keyframes r8-direction-sheen{0%{opacity:0;transform:translateX(-45%)}35%{opacity:.6}100%{opacity:0;transform:translateX(45%)}}
+/* Stable composited text baseline: finishing a reveal does not switch back from a matrix to none. */
+html.motion .studio .reveal{transform:translate3d(0,0,0);transition:opacity .6s var(--ease),transform .65s var(--ease)}
+html.motion .studio .reveal:not(.shown){transform:translate3d(0,16px,0)}
+.studio .hero-heading h1 span,.studio .hero-heading h1 em,.studio .hero-bottom{transform:translate3d(0,0,0)}
+@keyframes studio-title-enter{from{opacity:.25;transform:translate3d(0,16px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
 @media(hover:hover) and (pointer:fine){.studio .direction-card:hover{transform:translateY(-2px) scale(1.015)}.studio .direction-card:hover::after{animation:r8-direction-sheen .65s ease-out both}}
 .studio .direction-card:active{transform:scale(.99)}
 @media(prefers-reduced-motion:reduce){.studio .deck-stage.is-changing [data-deck-current],.studio .deck-stage.is-changing [data-deck-incoming],.studio .direction-card::after{animation:none!important}.studio .direction-card,.studio .direction-card:hover,.studio .direction-card[aria-pressed=true],.studio .direction-card:active{transform:none!important}.studio .direction-card,.studio .direction-card::before{transition:none!important}}
+
+/* Full, uncropped salon signature rather than an avatar. */
+.studio .hero-image picture{display:contents}
+.studio .brand-real-logo{width:58px;height:58px;min-width:58px;padding:3px;border:1px solid #ffffff45;border-radius:9px;overflow:visible;background:#fff;box-sizing:border-box}
+.studio .brand-real-logo img{width:100%;height:100%;object-fit:contain;border-radius:0}
+.studio .trust-rating>strong span,html[data-studio-theme=mono] .studio .trust-rating>strong span{color:#b58221}
+.studio .studio-request-invite{display:flex;flex-direction:column;align-items:flex-start;gap:23px}
+.studio .studio-request-invite h2{white-space:nowrap;font-size:clamp(28px,5vw,48px);margin:0}
+.studio .studio-request-invite h2 em{display:inline}
+.studio .studio-request-invite>button{align-self:flex-start;margin:0;white-space:nowrap}
+.studio .studio-request-invite>div>p{max-width:46ch;line-height:1.65}
+@media(min-width:390px) and (max-width:620px){.studio .header .brand{gap:7px}.studio .header .brand>span:last-child{display:block;max-width:61px;font-size:11px;line-height:1.3;white-space:normal}.studio .header .brand small{display:none}}
+@media(max-width:620px){
+ .studio .brand-real-logo{width:52px;height:52px;min-width:52px;padding:3px;border-radius:8px}
+ .studio .header-inner{gap:10px}
+ .studio .studio-request-invite{display:flex;gap:20px;padding:26px 21px}
+ .studio .studio-request-invite h2{font-size:clamp(26px,7.2vw,39px);line-height:1.15}
+ .studio .studio-request-invite>button{width:auto;max-width:100%;margin:0;padding:15px 19px;font-size:13px;gap:18px}
+}

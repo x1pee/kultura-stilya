@@ -22,7 +22,9 @@
   const q = selector => mount.querySelector(selector);
   const field = id => q('#rq-' + id);
   const service = field('service');
-  let category = data.categories[0];
+  const neutralSelection=mount.dataset.neutralSelection==='true';
+  const neutralCategory={id:'',title:'Свой образ',services:[]};
+  let category = neutralSelection?neutralCategory:data.categories[0];
   let selectedWork = null;
   let files = [];
   let fileBusy = false;
@@ -66,13 +68,14 @@
   }
   function clearFiles() { fileEpoch++; files.forEach(f=>URL.revokeObjectURL(f.url));files=[];field('files').value='';renderFiles(); }
   function updateCategory(id, title) {
-    const next = data.categories.find(c=>c.id===id); if(!next)return;
+    const next = neutralSelection&&!id?neutralCategory:data.categories.find(c=>c.id===id); if(!next)return;
     const categoryChanged=category.id!==id;
     const previousTitle=freeTattooPlace&&!categoryChanged&&service.value!==''?category.services[Number(service.value)]?.title:null;
     if(categoryChanged) { clearFiles(); selectedWork=null; paintWork(); }
     category=next;
     for(const b of mount.querySelectorAll('[data-rq-category]'))b.setAttribute('aria-pressed',String(b.dataset.rqCategory===id));
-    service.innerHTML=(customIntent?'<option value="">Помогите выбрать услугу</option>':'')+category.services.map((s,i)=>`<option value="${i}">${esc(s.title)} · ${esc(priceLabel(s))}</option>`).join('');
+    service.innerHTML=(customIntent||neutralSelection?'<option value="">'+(!category.id?'Сначала выберите направление':customIntent?'Выберите услугу, если уже знаете':'Выберите услугу')+'</option>':'')+category.services.map((s,i)=>`<option value="${i}">${esc(s.title)} · ${esc(priceLabel(s))}</option>`).join('');
+    service.disabled=neutralSelection&&!category.id;
     const targetTitle=title||previousTitle;
     if(targetTitle) { const index=category.services.findIndex(s=>s.title===targetTitle);if(index>=0)service.value=String(index); }
     for(const [key,selector] of [['tattoo','[data-rq-tattoo]'],['tattoo','[data-rq-checks]'],['color','[data-rq-color]'],['nails','[data-rq-nails]']]) {
@@ -185,7 +188,7 @@
     e.preventDefault();clearErrors();const problems=[];
     const fail=(id,message)=>{setError(id,message);problems.push(id);};
     const selected=service.value===''?null:category.services[Number(service.value)];
-    if(!selected&&!customIntent)fail('service','Выберите услугу');
+    if(!selected&&!customIntent)fail('service',neutralSelection&&!category.id?'Сначала выберите направление':'Выберите услугу');
     const name=field('name').value.trim();if(name.length<2||!/[\p{L}]/u.test(name))fail('name','Укажите имя — хотя бы 2 буквы');
     const phoneError=phone?phone.error():'Проверка номера загружается. Попробуйте ещё раз';if(phoneError)fail('phone',phoneError);
     const date=field('date').value; if(date&&date<localToday())fail('date','Выберите сегодняшнюю или будущую дату');
@@ -200,7 +203,7 @@
       if(!field('read').checked)fail('read','Прочитайте памятку и отметьте ознакомление');
     }
     if(fileBusy){field('general-error').textContent='Подождите, фото ещё обрабатывается';field('general-error').focus();return;}
-    if(problems.length){field('general-error').textContent='Проверьте отмеченные поля';const invalid=field(problems[0]);if(freeTattooPlace){const folded=invalid?.closest('details');if(folded)folded.open=true;}invalid?.focus({preventScroll:false});return;}
+    if(problems.length){field('general-error').textContent='Проверьте отмеченные поля';let invalid=field(problems[0]);if(neutralSelection&&invalid===service&&service.disabled)invalid=q('[data-rq-category]');if(freeTattooPlace){const folded=invalid?.closest('details');if(folded)folded.open=true;}invalid?.focus({preventScroll:false});return;}
     if(bookingAdapter?.validate){const result=bookingAdapter.validate();if(result?.error){field('general-error').textContent=result.error;result.focus?.focus();return;}}
     const details=selected?[['Услуга',selected.title],['Цена по прайсу',priceLabel(selected)]]:[['Направление',category.title],['Запрос','Хочу свой образ — помощь с выбором услуги']];
     details.push(['Имя',name],['Телефон',field('phone').value]);
@@ -219,7 +222,7 @@
   });
   function localToday(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
   field('date').min=localToday();
-  form.addEventListener('reset',()=>{clearFiles();selectedWork=null;customIntent=false;paintWork();bookingAdapter?.reset?.();queueMicrotask(()=>updateCategory(data.categories[0].id));});
+  form.addEventListener('reset',()=>{clearFiles();selectedWork=null;customIntent=false;paintWork();bookingAdapter?.reset?.();queueMicrotask(()=>updateCategory(neutralSelection?'':data.categories[0].id));});
   window.addEventListener('pagehide',()=>{clearFiles();form.reset();dialogs.forEach(d=>{if(d.open)d.close();d.querySelector('.rq-review')?.remove();});});
   async function loadVendor(name){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=new URL('vendor/'+name,base).href;s.onload=resolve;s.onerror=reject;document.head.append(s);});}
   updateCategory(category.id);

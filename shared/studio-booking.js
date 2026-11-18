@@ -53,7 +53,7 @@
   async function load(){
     const mine=++sequence;controller?.abort();slot=null;q('.sb-selection').hidden=true;
     q('[data-sb-date]').textContent=format(new Date(day+'T12:00:00+03:00'),{weekday:'long',day:'numeric',month:'long'});
-    if(!service){empty('Начнём с вашей идеи','Добавьте пожелания и референсы. Точную услугу и время можно выбрать после обсуждения с мастером');return;}
+    if(!service){empty('Выберите услугу для записи','После выбора услуги здесь появятся её мастера и переход к свободному времени. Референсы можно добавить независимо от выбора услуги');return;}
     if(embeddedViewer){
       const box=document.createElement('div');box.className='sb-widget-choice';
       const button=document.createElement('button');button.type='button';button.className='rq-primary';button.dataset.sbWidget='';button.textContent='Выбрать день и время';
