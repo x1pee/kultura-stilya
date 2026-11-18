@@ -160,3 +160,96 @@
  document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();else schedule()});reduced.addEventListener('change',()=>{if(reduced.matches)suspend();else schedule();state()});
  addEventListener('pagehide',()=>{pageHidden=true;suspend()});addEventListener('pageshow',()=>{pageHidden=false;refreshVisibility();schedule()});refreshVisibility();state();
 })();
+
+/* Contact shortcuts read the existing footer; there is no second facts dataset. */
+(() => {
+ 'use strict';
+ const footer=document.querySelector('footer#contacts');
+ const nav=document.getElementById('main-nav'),topline=document.querySelector('.hero-topline');
+ if(!footer||!nav||!topline||document.getElementById('studio-contacts-dialog'))return;
+ const pin='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+ const arrow='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg>';
+ const clean=value=>String(value||'').replace(/\s+/g,' ').trim();
+ function lines(node){
+  if(!node)return[];
+  const copy=node.cloneNode(true);copy.querySelectorAll('br').forEach(br=>br.replaceWith(document.createTextNode('\n')));
+  return copy.textContent.split('\n').map(clean).filter(Boolean);
+ }
+ function facts(){
+  const top=footer.querySelector('.footer-top');
+  const location=top&&[...top.children].find(el=>el.querySelector('p')&&el.querySelector('a.text-link'));
+  const addressLines=lines(location?.querySelector('p'));
+  const rawCity=clean(location?.querySelector('small')?.textContent);
+  const city=rawCity.toLowerCase().replace(/(^|[\s-])\p{L}/gu,letter=>letter.toUpperCase());
+  const address=addressLines[0]||'';
+  const hasCity=city&&address.toLowerCase().includes(city.toLowerCase());
+  return{city,address:city&&!hasCity?city+', '+address:address,shortAddress:hasCity?address.slice(address.toLowerCase().indexOf(city.toLowerCase())+city.length).replace(/^[,\s]+/,''):address,hours:addressLines.slice(1).join(' · '),map:location?.querySelector('a.text-link[href]'),phone:footer.querySelector('a.footer-phone[href^="tel:"]'),socials:[...footer.querySelectorAll('.footer-links a[href]')]};
+ }
+ const initial=facts();if(!initial.address)return;
+ const dialog=document.createElement('dialog');dialog.id='studio-contacts-dialog';dialog.className='studio-contact-dialog';dialog.setAttribute('aria-labelledby','studio-contacts-title');
+ dialog.innerHTML='<header class="studio-contact-heading"><h2 id="studio-contacts-title">Как нас найти</h2><button type="button" data-studio-contacts-close aria-label="Закрыть контакты">×</button></header><div class="studio-contact-content"></div>';
+ document.body.append(dialog);
+ const content=dialog.querySelector('.studio-contact-content'),closeButton=dialog.querySelector('[data-studio-contacts-close]');
+ const headerLink=document.createElement('button');headerLink.type='button';headerLink.className='studio-contact-nav';headerLink.dataset.openStudioContacts='';headerLink.textContent='Как найти';
+ nav.insertBefore(headerLink,nav.querySelector('.nav-cta'));
+ const heroLink=document.createElement('button');heroLink.type='button';heroLink.className='studio-contact-pin';heroLink.dataset.openStudioContacts='';heroLink.innerHTML=pin+'<b></b>';
+ topline.replaceChildren(heroLink);
+ for(const trigger of[headerLink,heroLink]){trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls',dialog.id);}
+ function updatePin(value){
+  const city=value.city.toLowerCase()==='санкт-петербург'?'СПб':value.city;
+  const compact=value.shortAddress.replace(/^проспект\s+/iu,'пр. ');
+  heroLink.querySelector('b').textContent=[city,compact].filter(Boolean).join(' · ');
+  heroLink.setAttribute('aria-label','Открыть адрес и часы работы: '+value.address);
+ }
+ function publicLink(source,className){
+  if(!source)return null;
+  const href=source.getAttribute('href');
+  if(!href||!/^https:\/\//i.test(href))return null;
+  const link=source.cloneNode(true);link.className=className;link.target='_blank';link.rel='noopener noreferrer';
+  return link;
+ }
+ function render(){
+  const value=facts();updatePin(value);content.replaceChildren();
+  const address=document.createElement('section');address.className='studio-contact-location';
+  const label=document.createElement('p');label.className='studio-contact-label';label.textContent='Адрес';
+  const main=document.createElement('p');main.className='studio-contact-address';main.textContent=value.address;address.append(label,main);
+  if(value.hours){const hours=document.createElement('p');hours.className='studio-contact-hours';hours.textContent=value.hours;address.append(hours);}
+  const map=publicLink(value.map,'studio-contact-route');if(map){map.replaceChildren(document.createTextNode('Построить маршрут'));map.insertAdjacentHTML('beforeend',arrow);address.append(map);}
+  content.append(address);
+  if(value.phone){const call=document.createElement('a');call.className='studio-contact-phone';call.href=value.phone.getAttribute('href');const small=document.createElement('small');small.textContent='Позвонить в салон';const number=document.createElement('strong');number.textContent=clean(value.phone.textContent);call.append(small,number);call.insertAdjacentHTML('beforeend',arrow);content.append(call);}
+  const socials=document.createElement('div');socials.className='studio-contact-socials';socials.setAttribute('aria-label','Мессенджеры и социальные сети');
+  value.socials.forEach(source=>{const link=publicLink(source,'studio-contact-social');if(link)socials.append(link)});if(socials.childElementCount)content.append(socials);
+ }
+ let origin=null,lock=null,scrollPosition=0;
+ const visible=element=>Boolean(element?.isConnected&&element.getClientRects().length&&getComputedStyle(element).visibility!=='hidden');
+ function open(trigger){
+  if(dialog.open)return;
+  render();origin=trigger||document.activeElement;scrollPosition=window.scrollY;
+  document.body.classList.remove('menu-open');document.querySelector('.menu-toggle')?.setAttribute('aria-expanded','false');
+  if(!document.querySelector('dialog[open]')){
+   lock={position:document.body.style.position,top:document.body.style.top,width:document.body.style.width};
+   const width=document.body.getBoundingClientRect().width;
+   document.body.style.position='fixed';document.body.style.top=-scrollPosition+'px';document.body.style.width=width+'px';
+  }
+  dialog.showModal();dialog.scrollTop=0;closeButton.focus({preventScroll:true});
+ }
+ function close(){if(dialog.open)dialog.close();}
+ closeButton.addEventListener('click',close);
+ dialog.addEventListener('close',()=>{
+  if(lock){Object.assign(document.body.style,lock);lock=null;window.scrollTo({top:scrollPosition,behavior:'instant'});}
+  const remaining=[...document.querySelectorAll('dialog[open]')].at(-1);
+  let target=visible(origin)?origin:document.querySelector('.menu-toggle');
+  if(!visible(target))target=heroLink;
+  if(remaining&&!remaining.contains(target))target=remaining.querySelector('button,a[href],[tabindex="0"]');
+  target?.focus({preventScroll:true});origin=null;
+ });
+ dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close()});
+ dialog.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  const items=[...dialog.querySelectorAll('button:not(:disabled),a[href],[tabindex="0"]')].filter(visible),first=items[0],last=items.at(-1);
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+ });
+ document.addEventListener('click',event=>{const trigger=event.target.closest('[data-open-studio-contacts]');if(!trigger)return;event.preventDefault();open(trigger)});
+ addEventListener('pagehide',close);updatePin(initial);
+})();

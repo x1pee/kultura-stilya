@@ -168,7 +168,9 @@
     paste.addEventListener('dragover',e=>e.preventDefault());paste.addEventListener('drop',e=>{e.preventDefault();addFiles(e.dataTransfer?.files||[]);paste.replaceChildren();});
   }
   function select(value={}) {
-    const reopenCustom=freeTattooPlace&&value.custom&&customIntent;
+    const changedCustomCategory=freeTattooPlace&&value.custom&&data.categories.some(c=>c.id===value.category&&c.id!==category.id);
+    const validCurrentService=service.value!==''&&Boolean(category.services[Number(service.value)]);
+    const reopenCustom=freeTattooPlace&&value.custom&&(customIntent||validCurrentService)&&!changedCustomCategory;
     if(freeTattooPlace){if(value.custom)customIntent=true;else if(value.serviceTitle||value.workImage)customIntent=false;}
     if(!reopenCustom)updateCategory(value.category || category.id, value.serviceTitle);
     if(value.custom&&!reopenCustom){service.value='';selectedWork=null;paintWork();updateService();}

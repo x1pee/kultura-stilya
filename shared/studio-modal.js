@@ -7,7 +7,8 @@
   const dialog=document.createElement('dialog');dialog.id='studio-request-dialog';dialog.className='studio-request-dialog';dialog.setAttribute('aria-labelledby','studio-request-title');
   dialog.innerHTML='<header class="studio-request-header"><span id="studio-request-title">Ваш визит в Культуру Стиля</span><button type="button" data-dialog-close aria-label="Закрыть окно заявки">×</button></header><div class="studio-request-scroll"></div>';
   const scroll=dialog.querySelector('.studio-request-scroll');scroll.append(mount);document.body.append(dialog);
-  section.innerHTML='<div class="studio-request-invite"><div><h2>Есть свой <em>образ?</em></h2><p>Покажите референс и расскажите мастеру, что хотите изменить</p></div><button type="button" data-open-request>Обсудить мой образ <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></button></div>';
+  // The draft lives in the dialog; no duplicate invitation or empty padded section remains.
+  section.remove();
   const rq=mount.querySelector('.rq');
   rq.classList.add('rq-compact');
   rq.querySelector('h2').textContent='Детали вашего визита';

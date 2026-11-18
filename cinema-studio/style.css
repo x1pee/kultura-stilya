@@ -430,3 +430,47 @@ html[data-studio-theme=mono] .studio .studio-marquee-icon{color:#ded6c6}
  .studio .studio-request-invite h2{font-size:clamp(26px,7.2vw,39px);line-height:1.15}
  .studio .studio-request-invite>button{width:auto;max-width:100%;margin:0;padding:15px 19px;font-size:13px;gap:18px}
 }
+
+/* Contact facts stay in the footer; these are compact shortcuts to a native dialog. */
+.studio .nav .studio-contact-nav{display:inline-flex;align-items:center;justify-content:flex-start;position:relative;min-height:44px;padding:10px 0;white-space:nowrap;font:inherit;line-height:1.4;color:inherit}
+.studio .nav .studio-contact-nav::after{content:'';position:absolute;bottom:7px;left:0;right:0;height:1px;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform .3s var(--ease)}
+.studio .nav .studio-contact-nav:hover::after{transform:scaleX(1)}
+.studio .hero-topline{display:block}
+.studio .studio-contact-pin{display:inline-flex;align-items:center;gap:8px;max-width:100%;min-height:44px;margin:-7px 0 0;padding:8px 12px;border:1px solid #ffffff45;border-radius:999px;color:#18372d;background:#f5f1e8c9;box-shadow:0 2px 13px #0000000c;backdrop-filter:blur(8px);font-size:11px;letter-spacing:0;text-transform:none;text-align:left;transition:background .25s,box-shadow .25s,transform .25s}
+.studio .studio-contact-pin b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;line-height:1.4}
+.studio .studio-contact-pin svg{width:16px;height:16px;flex:none;stroke-width:1.5}
+.studio .studio-contact-pin:hover{background:#fffaf0ed;box-shadow:0 5px 17px #0002}
+.studio .studio-contact-pin:active{transform:scale(.985)}
+.studio dialog.studio-contact-dialog{--sc-bg:#102b26;--sc-panel:#183a32;--sc-text:#f5f1e8;--sc-muted:#c0cbbb;--sc-line:#d9c7a044;--sc-accent:#dfceaa;width:min(580px,calc(100% - 24px));max-width:none;max-height:calc(100dvh - 24px);padding:0;border:1px solid var(--sc-line);border-radius:25px;background:var(--sc-bg);color:var(--sc-text);box-shadow:0 24px 100px #0008;overflow:auto;overscroll-behavior:contain;font:14px/1.6 Manrope,Arial,sans-serif}
+.studio dialog.studio-contact-dialog[open]{animation:none}
+.studio dialog.studio-contact-dialog::backdrop{background:#0009;backdrop-filter:blur(8px)}
+.studio-contact-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;position:sticky;top:0;z-index:1;padding:9px 17px 9px 24px;background:var(--sc-bg);border-bottom:1px solid var(--sc-line)}
+.studio-contact-heading h2{font-size:23px;line-height:1.25;letter-spacing:-.04em;font-weight:600;color:var(--sc-text)}
+.studio-contact-heading button{display:grid;place-items:center;width:44px;height:44px;flex:none;border:1px solid var(--sc-line);border-radius:50%;font:28px/1 Arial,sans-serif;color:var(--sc-text);transition:background .25s,transform .25s}
+.studio-contact-heading button:hover{background:var(--sc-panel)}.studio-contact-heading button:active{transform:scale(.96)}
+.studio-contact-content{padding:24px}
+.studio-contact-content p{padding:0}
+.studio-contact-label{font-size:11px;font-weight:600;color:var(--sc-muted);line-height:1.5;letter-spacing:.06em;text-transform:uppercase;margin:0 0 7px}
+.studio-contact-address{font-size:25px;line-height:1.4;font-weight:500;letter-spacing:-.04em;color:var(--sc-text);margin:0}
+.studio-contact-hours{font-size:14px;line-height:1.6;color:var(--sc-muted);margin:8px 0 0}
+.studio-contact-route{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:51px;padding:13px 18px;margin-top:18px;border-radius:999px;background:var(--sc-accent);color:var(--sc-bg);font-size:13px;font-weight:600;line-height:1.4;transition:filter .25s,transform .25s}
+.studio-contact-route:hover{filter:brightness(1.06)}.studio-contact-route:active{transform:scale(.985)}
+.studio-contact-route svg,.studio-contact-phone svg,.studio-contact-social svg{width:18px;height:18px;flex:none}
+.studio-contact-phone{position:relative;display:flex;flex-direction:column;justify-content:center;min-height:72px;padding:13px 46px 13px 16px;margin-top:18px;border:1px solid var(--sc-line);border-radius:17px;color:var(--sc-text);background:var(--sc-panel);transition:border-color .25s,transform .25s}
+.studio-contact-phone small{font-size:11px;color:var(--sc-muted);line-height:1.5;margin-bottom:3px}
+.studio-contact-phone strong{font-size:21px;line-height:1.3;font-weight:600;letter-spacing:-.035em}
+.studio-contact-phone svg{position:absolute;right:17px;top:calc(50% - 9px)}
+.studio-contact-phone:hover{border-color:var(--sc-accent)}.studio-contact-phone:active{transform:scale(.99)}
+.studio-contact-socials{display:flex;flex-wrap:wrap;gap:8px;margin-top:17px}
+.studio-contact-social{display:flex;align-items:center;justify-content:space-between;flex:1 0 auto;gap:8px;min-height:44px;padding:10px;border:1px solid var(--sc-line);border-radius:12px;font-size:12px;line-height:1.4;transition:background .25s,border-color .25s}
+.studio-contact-social:hover{background:var(--sc-panel);border-color:var(--sc-accent)}
+.studio dialog.studio-contact-dialog :focus-visible{outline:2px solid var(--sc-accent);outline-offset:3px}
+html[data-studio-theme=mono] .studio .studio-contact-pin{color:#252521;background:#f5f2edce;border-color:#ffffff45}
+html[data-studio-theme=mono] .studio .studio-contact-pin:hover{background:#fffaf0f0}
+html[data-studio-theme=mono] .studio dialog.studio-contact-dialog{--sc-bg:#202020;--sc-panel:#292929;--sc-text:#f5f2ed;--sc-muted:#c5c1ba;--sc-line:#ffffff3d;--sc-accent:#eae4d9;background:var(--sc-bg);color:var(--sc-text);border-color:var(--sc-line)}
+html[data-studio-theme=mono] .studio dialog.studio-contact-dialog::backdrop{background:#0009}
+@media(min-width:901px) and (max-width:1250px){.studio .nav .studio-contact-nav{font-size:11px}}
+@media(max-width:900px){.studio .nav .studio-contact-nav{align-self:stretch;font-size:15px;padding-block:10px}.studio .nav .studio-contact-nav::after{display:none}}
+@media(max-width:620px){.studio .studio-contact-pin{font-size:11px;padding:8px 11px;margin-top:-5px;gap:7px}.studio-contact-heading{padding:8px 12px 8px 20px}.studio-contact-heading h2{font-size:22px}.studio-contact-content{padding:20px}.studio-contact-address{font-size:22px}.studio-contact-route{margin-top:15px;min-height:50px}.studio-contact-phone{min-height:68px;margin-top:16px}.studio-contact-phone strong{font-size:20px}.studio-contact-socials{margin-top:15px}}
+@media(max-width:360px){.studio .studio-contact-pin{font-size:10px;padding-inline:10px}.studio-contact-content{padding:18px}.studio-contact-address{font-size:21px}.studio-contact-heading{padding-left:18px}.studio-contact-phone strong{font-size:19px}.studio-contact-social{font-size:11px;gap:7px}.studio-contact-social svg{width:16px;height:16px}}
+@media(prefers-reduced-motion:reduce){.studio dialog.studio-contact-dialog[open]{animation:none}.studio .studio-contact-pin,.studio .studio-contact-nav::after,.studio-contact-heading button,.studio-contact-route,.studio-contact-phone,.studio-contact-social{transition:none!important}}
