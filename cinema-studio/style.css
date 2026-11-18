@@ -936,6 +936,8 @@ html[data-studio-preview-theme=slate] .studio-intro{--intro-paper:rgba(25,39,46,
 .studio .header .studio-preview{position:static;right:auto;bottom:auto;flex:0 0 auto;max-width:none}
 .studio .header .studio-preview>summary{background:transparent;box-shadow:none}
 .studio .header .studio-preview-body{top:calc(100% + 8px);right:var(--pad);bottom:auto;width:min(330px,calc(100vw - 24px));max-height:calc(100svh - 110px)}
+/* A summary with neither a chosen service nor a reference is not another input field. */
+.studio-request-dialog .rq-compact.rq-custom-draft .rq-summary:has(>[data-rq-price]:empty):has(>[data-rq-description]:empty):not(:has(>.rq-work:not([hidden]))):not(:has(>.rq-preset-note:not([hidden]))){display:none}
 @media(max-width:900px){.studio .header-inner{gap:12px}.studio .header .studio-preview{margin-left:auto}.studio .header .studio-preview>summary{min-height:44px;padding:9px 12px;gap:10px;font-size:12px}.studio-preview-label{max-width:90px;line-height:1.2}.studio .header .studio-preview-body{right:12px}}
 @media(prefers-reduced-motion:reduce){.studio-preview-mark{transition:none}}
 
