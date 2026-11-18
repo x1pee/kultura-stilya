@@ -271,7 +271,8 @@
   form?.addEventListener('reset', () => queueMicrotask(() => { close(); sync(); }));
   mount?.addEventListener('kultura:request-selection', () => { close(); sync(); });
   const observer = new MutationObserver(sync);
-  observer.observe(source, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['disabled', 'required', 'selected', 'label', 'value', 'hidden', 'aria-invalid', 'aria-describedby'] });
+  const sourceObservation = { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['disabled', 'required', 'selected', 'label', 'value', 'hidden', 'aria-invalid', 'aria-describedby'] };
+  observer.observe(source, sourceObservation);
   // Existing validation calls select.focus(); proxy this instance without changing its validity.
   function focusBridge(options) {
     sync();
@@ -285,5 +286,6 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) close(true); });
   reduced.addEventListener('change', () => { if (reduced.matches && !expanded) close(true); });
   window.addEventListener('pagehide', () => { close(true); observer.disconnect(); });
+  window.addEventListener('pageshow', event => { if (event.persisted) { observer.observe(source, sourceObservation); sync(); } });
   sync();
 })();

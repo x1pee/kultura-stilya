@@ -326,7 +326,7 @@
  const active=()=>visible&&!document.hidden&&!pageHidden&&!blocked();
  const notice=text=>{status.textContent=text;status.hidden=!text};
  const state=()=>{deck.dataset.deckIndex=String(index);deck.dataset.deckBusy=String(busy);deck.dataset.deckAutoActive='false';deck.dataset.deckVisible=String(visible);deck.dataset.deckState=document.hidden||pageHidden?'hidden':blocked()?'covered':!visible?'offscreen':preparing?'loading':busy?'transitioning':'manual';stage.setAttribute('aria-busy',String(preparing));const image=incoming.querySelector('img');deck.dataset.deckNextReady=String(ready.get(image)===image.getAttribute('src')&&image.complete&&image.naturalWidth>0)};
- function paint(card,at){const item=slides[wrap(at)],image=card.querySelector('img'),src='../assets/'+item.file;if(image.getAttribute('src')!==src){pending.get(image)?.cancel();ready.delete(image);image.src=src}image.alt=item.caption+' — настоящее фото салона';image.width=item.width;image.height=item.height;image.loading='eager';image.decoding='async';card.querySelector('.deck-caption').textContent=item.caption;return image}
+ function paint(card,at){const item=slides[wrap(at)],image=card.querySelector('img'),src='../assets/'+item.file;if(image.getAttribute('src')!==src||image.complete&&!image.naturalWidth){pending.get(image)?.cancel();ready.delete(image);image.src=src}image.alt=item.caption+' — настоящее фото салона';image.width=item.width;image.height=item.height;image.loading='eager';image.decoding='async';card.querySelector('.deck-caption').textContent=item.caption;return image}
  function decode(card,at){
   const image=paint(card,at),src=image.getAttribute('src');
   if(ready.get(image)===src&&image.complete&&image.naturalWidth>0)return Promise.resolve(true);
@@ -386,9 +386,11 @@
  stage.addEventListener('animationend',event=>{if(busy&&!preparing&&event.target===incoming&&event.animationName==='studio-gallery-in')finish()});
  function suspend(){
   queued=0;pointer=null;warming=null;viewerToken++;
+  cancelAnimationFrame(scrollFrame);scrollFrame=0;
   if(preparing){token++;busy=false;preparing=false;stage.classList.remove('is-changing')}
   else if(busy)finish(false);
   pending.get(incoming.querySelector('img'))?.cancel();
+  pending.get(current.querySelector('img'))?.cancel();
   notice('');state();
  }
  function measure(){
@@ -398,7 +400,7 @@
   if(!active())suspend();else if(changed)warm();state();
  }
  if('IntersectionObserver'in window)new IntersectionObserver(measure,{threshold:[0,.1,.2,.4,.6,1]}).observe(stage);
- let scrollFrame=0;addEventListener('scroll',()=>{if(!scrollFrame)scrollFrame=requestAnimationFrame(()=>{scrollFrame=0;measure()})},{passive:true});
+ let scrollFrame=0;addEventListener('scroll',()=>{if(!document.hidden&&!pageHidden&&!scrollFrame)scrollFrame=requestAnimationFrame(()=>{scrollFrame=0;measure()})},{passive:true});
  addEventListener('resize',measure,{passive:true});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)suspend();else{measure();warm()}});
  addEventListener('pagehide',()=>{pageHidden=true;suspend()});addEventListener('pageshow',()=>{pageHidden=false;measure()});
@@ -798,7 +800,7 @@
   function check(){
    if(stopped||!imageReady||!fontsReady)return;
    if(image&&(!image.complete||!image.naturalWidth||readySource!==(image.currentSrc||image.src)))return;
-   stop();start();
+   stop();start(image,readySource);
   }
   function loaded(){
    if(stopped||!image.complete)return;
@@ -820,7 +822,7 @@
   cancel();
   if(!options.some(option=>option.id===id)||reduced.matches||document.hidden||!Element.prototype.animate)return false;
   const current=sequence;
-  whenSceneReady(()=>{frame=requestAnimationFrame(()=>{frame=0;if(sequence===current&&!reduced.matches&&!document.hidden)start(id,current)})});
+  whenSceneReady((image,source)=>{frame=requestAnimationFrame(()=>{frame=0;const stillReady=!image||image.complete&&image.naturalWidth>0&&source===(image.currentSrc||image.src);if(sequence===current&&!reduced.matches&&!document.hidden&&stillReady)start(id,current)})});
   return true;
  }
  function start(id,current){

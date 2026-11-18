@@ -137,7 +137,7 @@
   let origin=null,position=0,restore=null,visible=false;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   function canRestoreFocus(el){return Boolean(el?.isConnected&&el.getClientRects().length&&(el.checkVisibility?el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true}):getComputedStyle(el).visibility!=='hidden'));}
-  function motion(){submit.classList.toggle('is-orbiting',dialog.open&&visible&&!document.hidden&&!reduced.matches);}
+  function motion(){if(document.hidden||reduced.matches)cancelIntentProgress();submit.classList.toggle('is-orbiting',dialog.open&&visible&&!document.hidden&&!reduced.matches);}
   const observer=new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting||false;motion();},{root:scroll,threshold:.4});observer.observe(submit);
   function open(value={}){
     if(dialog.open)return;
@@ -178,5 +178,12 @@
   document.addEventListener('keydown',event=>{
     if(['Tab','Enter',' ','Escape','PageUp','PageDown','ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(event.key))document.documentElement.dataset.studioInput='keyboard';
   },true);
-  window.addEventListener('pagehide',()=>{cancelProgress();flowObserver.disconnect();observer.disconnect();compactObserver.disconnect();if(dialog.open)dialog.close();});
+  window.addEventListener('pagehide',()=>{cancelIntentProgress();flowObserver.disconnect();observer.disconnect();compactObserver.disconnect();if(dialog.open)dialog.close();});
+  window.addEventListener('pageshow',event=>{
+    if(!event.persisted)return;
+    if(timeNote)flowObserver.observe(timeNote,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
+    if(previews)flowObserver.observe(previews,{subtree:true,childList:true});
+    compactObserver.observe(mount,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','aria-pressed','aria-invalid']});
+    observer.observe(submit);syncCompact(true);motion();
+  });
 })();

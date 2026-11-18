@@ -349,18 +349,18 @@
     },
     {
       "path": "cinema-studio/app.js",
-      "bytes": 65328,
-      "sha256": "5641948657c74e438f7e2e3b0447589fa5bb0bb644142254603dffae2d4662b7"
+      "bytes": 65647,
+      "sha256": "02babad7c3d3b9ceb4a118eeb3973f3ed8cb9e74cf6191ccbe6d6c7abf8345fc"
     },
     {
       "path": "cinema-studio/index.html",
       "bytes": 77481,
-      "sha256": "7ee240a70b878d5fbab3e1fb985c420cd421a9f0e2b957ac20819991a1ca874a"
+      "sha256": "5b77de0795f599aa6c291e549cf28091bb9353cd4ac2b06196ff703200ca3277"
     },
     {
       "path": "cinema-studio/style.css",
-      "bytes": 162338,
-      "sha256": "6935380f471f289ada2420ed9461354f0615b8348c40486b02fb233c55f9de3c"
+      "bytes": 164778,
+      "sha256": "111c188afa2f15204ef3b2fb4bc6173775f8287bfac61fe9a977e8db121293cc"
     },
     {
       "path": "index.html",
@@ -394,8 +394,8 @@
     },
     {
       "path": "shared/studio-modal.js",
-      "bytes": 16173,
-      "sha256": "da81110550dad9c72982d14a64041d0dd4f9ab4329e00339e8ce872b2fb93c35"
+      "bytes": 16717,
+      "sha256": "bc98ea0c2956b3a658c79ab0e4004fb671144a44e8d6698dfb7fe5f45602124d"
     },
     {
       "path": "shared/studio-request-data.js",
@@ -414,8 +414,8 @@
     },
     {
       "path": "shared/studio-service-picker.js",
-      "bytes": 15176,
-      "sha256": "106054ee24bc5652c9b82517246a07fdfd72552ef93c36fc44af302256a66b11"
+      "bytes": 15354,
+      "sha256": "9b519521b52cb7242db731cdc81d7fe485fe7d92b583a58153aa9b5729863df8"
     },
     {
       "path": "shared/studio-staff-data.js",

@@ -1105,6 +1105,61 @@ html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .stud
   .studio #works .work-card:hover{transform:none;translate:none;transition:none}
 }
 
+/* Local scrims follow the copy; the remaining salon photograph stays bright. */
+body.studio[data-studio-hero=cover-left] .hero-heading{
+  position:relative;
+  isolation:isolate;
+}
+body.studio[data-studio-hero=cover-left] .hero-heading::before{
+  content:"";
+  position:absolute;
+  inset:-32px -58px -34px -50px;
+  z-index:-1;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 38% 60%,#080b0b80 0%,#080b0b40 45%,#080b0b12 64%,transparent 78%);
+}
+body.studio[data-studio-hero=cover-left] .hero-heading h1{
+  text-shadow:0 2px 24px #00000050;
+}
+body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address){
+  position:relative;
+  isolation:isolate;
+  text-shadow:0 1px 5px #000000b3;
+}
+body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address)::before{
+  content:"";
+  position:absolute;
+  inset:-16px -34px -18px -24px;
+  z-index:-1;
+  pointer-events:none;
+  background:radial-gradient(ellipse at 38% 50%,#080b0bb8 0%,#080b0b61 48%,transparent 78%);
+}
+body.studio[data-studio-hero=cover-left] .hero .primary{
+  transition:transform .22s ease,background-color .22s ease,box-shadow .22s ease;
+}
+@media(hover:hover) and (pointer:fine){
+  body.studio[data-studio-hero=cover-left] .hero .primary:hover{
+    transform:translateY(-2px);
+    box-shadow:0 10px 30px #00000030,inset 0 0 0 1px #ffffffa6;
+  }
+}
+body.studio[data-studio-hero=cover-left] .hero .primary:active{transform:translateY(0) scale(.985)}
+@media(max-width:620px){
+  body.studio[data-studio-hero=cover-left] .hero-heading::before{inset:-24px -30px -26px -26px}
+  body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address)::before{inset:-12px -24px -14px -18px}
+}
+@media(prefers-reduced-motion:reduce){
+  body.studio[data-studio-hero=cover-left] .hero .primary,
+  body.studio[data-studio-hero=cover-left] .hero .primary:is(:hover,:active){transition:none;transform:none}
+}
+/* Short landscape uses the existing dark-on-paper hero instead of the photo cover. */
+@media(min-width:621px) and (max-width:900px) and (max-height:560px){
+  body.studio[data-studio-hero=cover-left] .hero-heading::before,
+  body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address)::before{content:none;display:none}
+  body.studio[data-studio-hero=cover-left] .hero-heading h1,
+  body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address){text-shadow:none}
+}
+
 /* Equal halves cover the viewport; duration scales with width to keep a calm 16px/s. */
 html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .studio-marquee-track{animation-duration:var(--studio-marquee-duration,85s)}
 .studio .studio-gallery-zones button>span:not(.sr-only){font-size:0;line-height:0}
