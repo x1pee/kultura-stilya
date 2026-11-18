@@ -485,3 +485,47 @@
   addEventListener('pagehide',()=>observer.disconnect(),{once:true});
  }
 })();
+
+/* Enhance the existing studio toggle/link/Escape handlers; do not install duplicate toggles. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const header=document.querySelector('.header'),button=header?.querySelector('.menu-toggle'),nav=header?.querySelector('.nav');
+ if(!button||!nav)return;
+ const mobile=matchMedia('(max-width:900px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const originalTabIndexes=new WeakMap(),supportsInert='inert' in HTMLElement.prototype;
+ let timer=0,lastOpen=null,lastMobile=null;
+ if(!nav.id)nav.id='studio-mobile-nav';
+ button.setAttribute('aria-controls',nav.id);
+ button.querySelector('span')?.setAttribute('aria-hidden','true');
+ function setInert(inert){
+  if(supportsInert){nav.inert=inert;return}
+  for(const item of nav.querySelectorAll('a[href],button,[tabindex]')){
+   if(inert){if(!originalTabIndexes.has(item))originalTabIndexes.set(item,item.getAttribute('tabindex'));item.setAttribute('tabindex','-1')}
+   else if(originalTabIndexes.has(item)){const value=originalTabIndexes.get(item);if(value===null)item.removeAttribute('tabindex');else item.setAttribute('tabindex',value);originalTabIndexes.delete(item)}
+  }
+ }
+ function settle(){clearTimeout(timer);timer=0;header.dataset.menuState=!mobile.matches?'desktop':document.body.classList.contains('menu-open')?'open':'closed'}
+ function sync(force=false){
+  const isMobile=mobile.matches,open=isMobile&&document.body.classList.contains('menu-open');
+  header.dataset.menuMotion=document.hidden||reduced.matches?'off':'on';
+  button.setAttribute('aria-expanded',String(open));button.setAttribute('aria-label',open?'Закрыть меню':'Открыть меню');
+  if(isMobile&&!open&&nav.contains(document.activeElement)&&!document.querySelector('dialog[open]'))button.focus({preventScroll:true});
+  setInert(isMobile&&!open);
+  if(isMobile)nav.setAttribute('aria-hidden',String(!open));else nav.removeAttribute('aria-hidden');
+  if(force||open!==lastOpen||isMobile!==lastMobile){
+   clearTimeout(timer);timer=0;
+   const animate=isMobile&&lastMobile===true&&lastOpen!==null&&open!==lastOpen&&!document.hidden&&!reduced.matches;
+   header.dataset.menuState=animate?(open?'opening':'closing'):isMobile?(open?'open':'closed'):'desktop';
+   if(animate)timer=setTimeout(settle,300);
+   lastOpen=open;lastMobile=isMobile;
+  }
+ }
+ new MutationObserver(()=>sync()).observe(document.body,{attributes:true,attributeFilter:['class']});
+ mobile.addEventListener('change',()=>sync(true));
+ reduced.addEventListener('change',()=>{sync(true);if(reduced.matches)settle()});
+ document.addEventListener('visibilitychange',()=>{sync(true);if(document.hidden)settle()});
+ addEventListener('pagehide',()=>{clearTimeout(timer);timer=0;header.dataset.menuMotion='off';settle()});
+ addEventListener('pageshow',()=>sync(true));
+ header.dataset.studioMenuReady='true';sync(true);
+})();
