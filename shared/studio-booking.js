@@ -67,7 +67,7 @@
         widgetPreference=value;timeDraft=null;if(value.staffId){staffId=String(value.staffId);renderStaff(eligibleStaff(),true);const person=eligibleStaff().find(p=>String(p.id)===staffId),option=service?.staffOptions?.find(o=>String(o.staffId)===staffId);if(person&&option?.durationSeconds)root.querySelector('[data-rq-description]').textContent=(option.durationSeconds/60)+' мин · '+person.name;}
         const label=q('.sb-selection');label.hidden=false;label.textContent='Выбрано: '+format(new Date(value.datetime),{weekday:'short',day:'numeric',month:'long'})+', '+value.timeLabel+' · время не забронировано';button.textContent='Изменить день и время';
       }});
-      const note=document.createElement('p');note.className='sb-note';note.textContent='Откроется живое расписание салона внутри сайта. В демо можно выбрать время, но запись не отправляется';
+      const note=document.createElement('p');note.className='sb-note';note.textContent='Реальное расписание салона. В демо запись не отправляется';
       box.append(button,note);q('[data-sb-content]').replaceChildren(box);return;
     }
     if(!permittedLive){empty('Расписание пока не подключено','Дни можно просмотреть, но свободные часы и смены мастеров появятся только из YCLIENTS. Сейчас можно подготовить пожелания и референсы ниже');return;}

@@ -39,6 +39,8 @@
   list.className = 'studio-service-list';
   list.setAttribute('role', 'listbox');
   list.hidden = true;
+  list.inert = true;
+  list.setAttribute('aria-hidden', 'true');
   dialog.append(list);
   if (!label.id) label.id = 'studio-service-label';
   label.htmlFor = trigger.id;
@@ -54,8 +56,10 @@
   let renderKey = '';
   let active = -1;
   let expanded = false;
+  let hideTimer = 0;
   let typeahead = '';
   let typeaheadAt = 0;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const higherDialogOpen = () => Array.from(document.querySelectorAll('dialog[open]')).some(item => item !== dialog);
   const canOpen = () => dialog.open && !source.disabled && !higherDialogOpen() && dialog.dataset.dialogMotionState !== 'closing';
 
@@ -67,14 +71,23 @@
   function optionDisabled(option) {
     return option.disabled || Boolean(option.parentElement?.tagName === 'OPTGROUP' && option.parentElement.disabled);
   }
-  function close() {
+  function close(immediate = false) {
     expanded = false;
-    list.hidden = true;
+    list.inert = true;
+    list.setAttribute('aria-hidden', 'true');
+    list.classList.remove('is-visible');
     list.style.visibility = '';
     trigger.setAttribute('aria-expanded', 'false');
     trigger.removeAttribute('aria-activedescendant');
     control.classList.remove('is-open');
     typeahead = '';
+    if (immediate === true || reduced.matches || document.hidden || list.hidden) {
+      clearTimeout(hideTimer); hideTimer = 0;
+      list.hidden = true;
+    } else if (!hideTimer) {
+      // CSS reverses the same transition on reopen; only its final hiding is delayed.
+      hideTimer = setTimeout(() => { hideTimer = 0; if (!expanded) list.hidden = true; }, 180);
+    }
   }
   function showActive(index, reveal = true) {
     active = index;
@@ -93,7 +106,8 @@
     const options = Array.from(source.options);
     const key = JSON.stringify(options.map(option => [option.value, option.label, optionDisabled(option), option.hidden, Boolean(option.parentElement?.hidden)]));
     if (key !== renderKey) {
-      close();
+      // A changed catalog must never leave old service rows visible or selectable.
+      close(true);
       renderKey = key;
       rows = [];
       list.replaceChildren();
@@ -170,13 +184,20 @@
   function open(edge) {
     sync();
     if (!canOpen()) return;
+    clearTimeout(hideTimer); hideTimer = 0;
+    const wasHidden = list.hidden;
     list.hidden = false;
     list.style.visibility = 'hidden';
-    if (!position()) { close(); return; }
+    if (!position()) { close(true); return; }
     expanded = true;
+    list.inert = false;
+    list.setAttribute('aria-hidden', 'false');
     trigger.setAttribute('aria-expanded', 'true');
     control.classList.add('is-open');
     list.style.visibility = '';
+    // One style flush starts a hidden list from its closed state; reversals need none.
+    if (wasHidden && !reduced.matches) void list.offsetWidth;
+    list.classList.add('is-visible');
     const enabled = rows.filter(row => !optionDisabled(row.option));
     const initial = edge === 'first' ? enabled[0] : edge === 'last' ? enabled[enabled.length - 1] : enabled.find(row => row.index === source.selectedIndex) || enabled[0];
     showActive(initial?.index ?? -1);
@@ -238,7 +259,7 @@
   document.addEventListener('pointerdown', event => { if (expanded && !control.contains(event.target) && !list.contains(event.target)) close(); }, true);
   document.addEventListener('focusin', event => { if (expanded && event.target !== source && !control.contains(event.target) && !list.contains(event.target)) close(); });
   dialog.addEventListener('cancel', event => { if (expanded) { event.preventDefault(); event.stopPropagation(); close(); } });
-  dialog.addEventListener('close', close);
+  dialog.addEventListener('close', () => close(true));
   dialog.addEventListener('scroll', close, { passive: true });
   scroll?.addEventListener('scroll', close, { passive: true });
   window.addEventListener('resize', close, { passive: true });
@@ -261,6 +282,8 @@
   try { Object.defineProperty(source, 'focus', { configurable: true, value: focusBridge }); } catch { /* focusin below also covers native programmatic focus. */ }
   source.addEventListener('focus', () => { if (document.activeElement === source) focusBridge({ preventScroll: true }); });
   source.addEventListener('invalid', event => { event.preventDefault(); focusBridge({ preventScroll: false }); });
-  window.addEventListener('pagehide', () => { close(); observer.disconnect(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) close(true); });
+  reduced.addEventListener('change', () => { if (reduced.matches && !expanded) close(true); });
+  window.addEventListener('pagehide', () => { close(true); observer.disconnect(); });
   sync();
 })();

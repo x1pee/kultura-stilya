@@ -776,17 +776,54 @@
  const layer=document.createElement('div');
  layer.className='studio-intro';layer.setAttribute('aria-hidden','true');layer.inert=true;
  document.body.append(layer);
- let animations=[],timer=0,sequence=0,run=0;
+ let animations=[],timer=0,frame=0,sequence=0,run=0,stopWaiting=null;
  const word=()=>'<div class="studio-intro-word"><span>Культура</span><em>Стиля</em></div>';
  function cancel(){
   sequence++;clearTimeout(timer);timer=0;
+  cancelAnimationFrame(frame);frame=0;
+  stopWaiting?.();stopWaiting=null;
   animations.forEach(animation=>animation.cancel());animations=[];
   layer.classList.remove('is-active');layer.replaceChildren();delete layer.dataset.intro;
+ }
+ function whenSceneReady(start){
+  const image=document.querySelector('.hero-image img'),fonts=document.fonts;
+  let stopped=false,imageReady=!image,fontsReady=!fonts,readySource='';
+  // A slow or failed resource skips this optional intro; the page stays usable.
+  const timeout=setTimeout(stop,3000);
+  function stop(){
+   stopped=true;clearTimeout(timeout);
+   image?.removeEventListener('load',loaded);image?.removeEventListener('error',stop);
+   if(stopWaiting===stop)stopWaiting=null;
+  }
+  function check(){
+   if(stopped||!imageReady||!fontsReady)return;
+   if(image&&(!image.complete||!image.naturalWidth||readySource!==(image.currentSrc||image.src)))return;
+   stop();start();
+  }
+  function loaded(){
+   if(stopped||!image.complete)return;
+   if(!image.naturalWidth){stop();return}
+   imageReady=false;
+   const source=image.currentSrc||image.src;
+   Promise.resolve().then(()=>image.decode?.()).then(()=>{
+    if(stopped)return;
+    if(source!==(image.currentSrc||image.src)){loaded();return}
+    readySource=source;imageReady=true;check();
+   },stop);
+  }
+  stopWaiting=stop;
+  if(image){image.addEventListener('load',loaded);image.addEventListener('error',stop);loaded()}
+  if(fonts)Promise.all([fonts.load('500 72px Manrope','Культура'),fonts.load('italic 400 72px Lora','Стиля'),fonts.ready]).then(()=>{fontsReady=true;check()},stop);
+  check();
  }
  function play(id){
   cancel();
   if(!options.some(option=>option.id===id)||reduced.matches||document.hidden||!Element.prototype.animate)return false;
   const current=sequence;
+  whenSceneReady(()=>{frame=requestAnimationFrame(()=>{frame=0;if(sequence===current&&!reduced.matches&&!document.hidden)start(id,current)})});
+  return true;
+ }
+ function start(id,current){
   layer.dataset.intro=id;
   // Alternating names restart the CSS failsafe even for a rapid same-frame replay.
   layer.dataset.introRun=String(++run%2);
@@ -824,7 +861,6 @@
   }
   // CSS also hides the layer if this callback cannot run; input remains available.
   timer=setTimeout(()=>{if(sequence===current)cancel()},1600);
-  return true;
  }
  document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel()});
  addEventListener('pagehide',cancel);

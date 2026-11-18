@@ -349,13 +349,13 @@
     },
     {
       "path": "cinema-studio/app.js",
-      "bytes": 63638,
-      "sha256": "b97efc144fcd5ef6489d243745e333d945f9957ec1b1808a405a68b49fd28d33"
+      "bytes": 65328,
+      "sha256": "5641948657c74e438f7e2e3b0447589fa5bb0bb644142254603dffae2d4662b7"
     },
     {
       "path": "cinema-studio/index.html",
       "bytes": 77481,
-      "sha256": "2cde34a154c741c823d0f6209c2f62d8ec0c9b2ce2845ee6859086fad51ebfac"
+      "sha256": "7ee240a70b878d5fbab3e1fb985c420cd421a9f0e2b957ac20819991a1ca874a"
     },
     {
       "path": "cinema-studio/style.css",
@@ -384,18 +384,18 @@
     },
     {
       "path": "shared/studio-booking.js",
-      "bytes": 17649,
-      "sha256": "6f83cc7ae3a909fe33bb4f5a7175d7da8cb3fdb3b462015c0bd869a2c725d28f"
+      "bytes": 17569,
+      "sha256": "ac068cbecb3bb9ce2b238021dfdaf3127987d00456591d9e9e70596b2d17594d"
     },
     {
       "path": "shared/studio-modal.css",
-      "bytes": 25806,
-      "sha256": "49865c981fddbdba126b854f2e29dc7caba2b83845a2e1ee55f82f27536f55e8"
+      "bytes": 27029,
+      "sha256": "cecebeab6cc7162e33ad4375f8ec0de7a91a1595772ddeea9141df4daed6abb5"
     },
     {
       "path": "shared/studio-modal.js",
-      "bytes": 15414,
-      "sha256": "37d6f9c713c7fdb2c089652330cf81158dd583a4024038e8e84910e4b81a4772"
+      "bytes": 16173,
+      "sha256": "da81110550dad9c72982d14a64041d0dd4f9ab4329e00339e8ce872b2fb93c35"
     },
     {
       "path": "shared/studio-request-data.js",
@@ -409,13 +409,13 @@
     },
     {
       "path": "shared/studio-service-picker.css",
-      "bytes": 6025,
-      "sha256": "e97585c8d49a63bca5db3c217cdb49675bf8590b85ebf86289d74e5ea2a10750"
+      "bytes": 6529,
+      "sha256": "226aec0b73d519f41f94d30155c605339a73b8228c3c06d77e2625c1b5a5a0f7"
     },
     {
       "path": "shared/studio-service-picker.js",
-      "bytes": 13905,
-      "sha256": "f234cb113d552bd190c826318bb545a5d1b833106131d7a6f9815b0a20a73567"
+      "bytes": 15176,
+      "sha256": "106054ee24bc5652c9b82517246a07fdfd72552ef93c36fc44af302256a66b11"
     },
     {
       "path": "shared/studio-staff-data.js",

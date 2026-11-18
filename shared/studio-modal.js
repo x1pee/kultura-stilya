@@ -73,10 +73,11 @@
   form.addEventListener('reset',()=>queueMicrotask(()=>{compactCategory=null;syncCompact(true)}));
   syncCompact();
   // Deliberate choices advance only this dialog; typing never scrolls or moves focus.
-  let progressTimer=0,timeIntent=0,uploadIntent=0,manualUntil=0;
+  let progressTimer=0,timeIntent=0,uploadIntent=0,manualUntil=0,progressing=false;
   const find=selector=>mount.querySelector(selector);
   const cancelProgress=()=>{clearTimeout(progressTimer);progressTimer=0;};
-  function cancelIntentProgress(){cancelProgress();timeIntent=0;uploadIntent=0;}
+  function stopActiveScroll(){if(progressing){progressing=false;scroll.scrollTo({top:scroll.scrollTop,behavior:'instant'});}}
+  function cancelIntentProgress(){cancelProgress();stopActiveScroll();timeIntent=0;uploadIntent=0;}
   function interruptProgress(){cancelIntentProgress();manualUntil=performance.now()+450;}
   const visibleBlock=element=>Boolean(element&&!element.hidden&&element.getClientRects().length);
   function detailBlock(){return ['[data-rq-tattoo]','[data-rq-color]','[data-rq-nails]','[data-rq-upload]'].map(find).find(visibleBlock)||find('.rq-contact-column');}
@@ -90,9 +91,10 @@
       if(source&&active!==source&&active?.matches('input,select,textarea,[contenteditable=true]'))return;
       const target=typeof resolve==='function'?resolve():resolve;if(!visibleBlock(target))return;
       const box=scroll.getBoundingClientRect(),rect=target.getBoundingClientRect();
-      if(rect.top>=box.top+12&&rect.top+Math.min(rect.height,170)<=box.bottom-20)return;
+      if(rect.top>=box.top+12&&rect.top+Math.min(rect.height,box.height-36)<=box.bottom-20)return;
       const top=Math.max(0,Math.min(scroll.scrollHeight-scroll.clientHeight,scroll.scrollTop+rect.top-box.top-16));
-      scroll.scrollTo({top,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+      progressing=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+      scroll.scrollTo({top,behavior:progressing?'smooth':'auto'});
     },delay);
   }
   mount.addEventListener('kultura:request-selection',event=>{timeIntent=0;uploadIntent=0;manualUntil=0;progress(()=>event.detail?.serviceId?find('.sb'):find('#rq-service')?.closest('.rq-field'),260);});
@@ -125,7 +127,8 @@
   const timeNote=find('.sb-selection'),previews=find('.rq-previews');
   if(timeNote)flowObserver.observe(timeNote,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
   if(previews)flowObserver.observe(previews,{subtree:true,childList:true});
-  scroll.addEventListener('wheel',interruptProgress,{passive:true});scroll.addEventListener('touchstart',cancelProgress,{passive:true});scroll.addEventListener('touchmove',interruptProgress,{passive:true});
+  scroll.addEventListener('scrollend',()=>{progressing=false;},{passive:true});
+  scroll.addEventListener('wheel',interruptProgress,{passive:true});scroll.addEventListener('touchstart',()=>{cancelProgress();stopActiveScroll();},{passive:true});scroll.addEventListener('touchmove',interruptProgress,{passive:true});
   form.addEventListener('reset',interruptProgress);
   dialog.addEventListener('close',interruptProgress);
   const close=dialog.querySelector('[data-dialog-close]');
@@ -170,5 +173,10 @@
   document.addEventListener('click',e=>{const trigger=e.target.closest('a[href="#request"],[data-open-request]');if(!trigger)return;e.preventDefault();if(trigger.matches('[data-open-request]'))window.KulturaRequest.select({custom:true,trigger});else open({trigger});});
   document.addEventListener('visibilitychange',motion);reduced.addEventListener('change',motion);
   window.KulturaRequest.setPresentationAdapter({open});
+  // Dialog focus restoration must not leave keyboard-style rectangles after touch.
+  document.addEventListener('pointerdown',()=>{document.documentElement.dataset.studioInput='pointer';},true);
+  document.addEventListener('keydown',event=>{
+    if(['Tab','Enter',' ','Escape','PageUp','PageDown','ArrowDown','ArrowUp','ArrowLeft','ArrowRight','Home','End'].includes(event.key))document.documentElement.dataset.studioInput='keyboard';
+  },true);
   window.addEventListener('pagehide',()=>{cancelProgress();flowObserver.disconnect();observer.disconnect();compactObserver.disconnect();if(dialog.open)dialog.close();});
 })();
