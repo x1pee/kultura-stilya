@@ -179,8 +179,8 @@
     },
     {
       "path": "cinema-studio/app.js",
-      "bytes": 18275,
-      "sha256": "c053c8fb8e21b4f697be9c725cdbb4b473e484296d231499496e2b615be3d39f"
+      "bytes": 18297,
+      "sha256": "226ce6d642179b5e4e145e138bfb9cd3ed97f92cd0f55d1fd7254960ef4825d5"
     },
     {
       "path": "cinema-studio/index.html",
@@ -261,6 +261,11 @@
       "path": "shared/vendor/phone-input.js",
       "bytes": 5971,
       "sha256": "66bf2bf3724cea378a31d98aee71499c94a40e5f9b963b0ba1d2785608e5c50a"
+    },
+    {
+      "path": "src/read-only-viewer.mjs",
+      "bytes": 23527,
+      "sha256": "4c310980e70b56ef2d1ca36859ed5ac84c9c2bd1bc3ab4774c1d7f9a370a6ffd"
     }
   ]
 }

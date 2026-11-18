@@ -110,11 +110,11 @@
  function finish(continueQueue=true){clearTimeout(finishTimer);finishTimer=0;if(busy){commit(target,transitionManual);busy=false;stage.classList.remove('is-changing')}state();if(continueQueue&&queued){const step=queued,manual=queuedManual;queued=0;change(step,manual)}else{queued=0;schedule()}}
  async function change(step,manual=true){
   stopAuto();if(busy){queued=step<0?-1:1;queuedManual=manual;return}
-  if(!visible||document.hidden||pageHidden||obstructed())return;
+  if((!visible&&!manual)||document.hidden||pageHidden||obstructed())return;
   target=wrap(index+(step<0?-1:1));transitionManual=manual;
   busy=true;preparing=true;const token=++loadToken;state();const ready=await prepare(target);
   if(token!==loadToken)return;
-  preparing=false;if(!ready||!visible||document.hidden||pageHidden||obstructed()){busy=false;queued=0;if(!ready&&manual)announcer.textContent='Не удалось загрузить фотографию. Попробуйте ещё раз.';schedule();return}
+  preparing=false;if(!ready||(!visible&&!manual)||document.hidden||pageHidden||obstructed()){busy=false;queued=0;if(!ready&&manual)announcer.textContent='Не удалось загрузить фотографию. Попробуйте ещё раз.';schedule();return}
   if(reduced.matches){commit(target,manual);busy=false;if(queued){const next=queued,nextManual=queuedManual;queued=0;change(next,nextManual)}else schedule();return}
   paint(incoming,target);stage.classList.add('is-changing');state();finishTimer=setTimeout(()=>finish(),TRANSITION_MS);
  }
