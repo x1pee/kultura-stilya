@@ -7,6 +7,8 @@
   const mount = document.querySelector('[data-request-root]');
   if (!data || !mount) return;
   const freeTattooPlace = Boolean(mount.dataset.bookingMode);
+  let workPresets=[];
+  if(freeTattooPlace){try{const p=JSON.parse(document.getElementById('studio-work-presets')?.textContent||'null');if(p?.version===1&&Array.isArray(p.presets))workPresets=p.presets;}catch{}}
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const photoUrl = name => new URL('../assets/' + name, base).href;
   const arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg>';
@@ -26,6 +28,10 @@
   const neutralCategory={id:'',title:'Свой образ',services:[]};
   let category = neutralSelection?neutralCategory:data.categories[0];
   let selectedWork = null;
+  let selectedPreset = null;
+  const presetHint=freeTattooPlace?document.createElement('p'):null;
+  if(presetHint){presetHint.className='rq-small rq-preset-note';presetHint.dataset.rqPresetNote='';presetHint.hidden=true;q('.rq-summary').append(presetHint);}
+  function paintPreset(){if(presetHint){presetHint.hidden=!selectedPreset;presetHint.textContent=selectedPreset?.note||'';}}
   let files = [];
   let fileBusy = false;
   let fileEpoch = 0;
@@ -71,7 +77,7 @@
     const next = neutralSelection&&!id?neutralCategory:data.categories.find(c=>c.id===id); if(!next)return;
     const categoryChanged=category.id!==id;
     const previousTitle=freeTattooPlace&&!categoryChanged&&service.value!==''?category.services[Number(service.value)]?.title:null;
-    if(categoryChanged) { clearFiles(); selectedWork=null; paintWork(); }
+    if(categoryChanged) { clearFiles(); selectedWork=null;selectedPreset=null;paintPreset();paintWork(); }
     category=next;
     for(const b of mount.querySelectorAll('[data-rq-category]'))b.setAttribute('aria-pressed',String(b.dataset.rqCategory===id));
     service.innerHTML=(customIntent||neutralSelection?'<option value="">'+(!category.id?'Сначала выберите направление':customIntent?'Выберите услугу, если уже знаете':'Выберите услугу')+'</option>':'')+category.services.map((s,i)=>`<option value="${i}">${esc(s.title)} · ${esc(priceLabel(s))}</option>`).join('');
@@ -93,9 +99,9 @@
     const el=q('.rq-work');el.hidden=!selectedWork;
     if(selectedWork) {el.querySelector('img').src=photoUrl(selectedWork.image);q('[data-rq-work-label]').textContent='Пример салона: '+selectedWork.label;}
   }
-  q('[data-rq-clear-work]').onclick=()=>{selectedWork=null;paintWork();};
+  q('[data-rq-clear-work]').onclick=()=>{selectedWork=null;selectedPreset=null;paintPreset();paintWork();};
   mount.addEventListener('click',e=>{const b=e.target.closest('[data-rq-category]');if(b)updateCategory(b.dataset.rqCategory);});
-  service.onchange=()=>{if(service.value!=='')customIntent=false;clearErrors();updateService();};
+  service.onchange=()=>{if(service.value!=='')customIntent=false;selectedPreset=null;paintPreset();clearErrors();updateService();};
   field('place').onchange=()=>{const other=!freeTattooPlace&&field('place').value==='Другая зона';q('[data-rq-other]').hidden=!other;field('other').disabled=!other;setError('place','');};
   function renderFiles() {
     const box=q('.rq-previews');box.replaceChildren();
@@ -168,15 +174,24 @@
     paste.addEventListener('dragover',e=>e.preventDefault());paste.addEventListener('drop',e=>{e.preventDefault();addFiles(e.dataTransfer?.files||[]);paste.replaceChildren();});
   }
   function select(value={}) {
+    let preset=null;
+    if(freeTattooPlace&&!value.custom&&value.workImage&&!value.serviceTitle&&data.images.includes(value.workImage)){
+      const candidate=workPresets.find(p=>p.category===value.category&&p.image===value.workImage);
+      const match=data.categories.find(c=>c.id===value.category)?.services.find(s=>s.canonicalId===candidate?.canonicalId);
+      if(match){preset=candidate;value={...value,serviceTitle:match.title};}
+    }
     const changedCustomCategory=freeTattooPlace&&value.custom&&data.categories.some(c=>c.id===value.category&&c.id!==category.id);
     const validCurrentService=service.value!==''&&Boolean(category.services[Number(service.value)]);
     const reopenCustom=freeTattooPlace&&value.custom&&(customIntent||validCurrentService)&&!changedCustomCategory;
     if(freeTattooPlace){if(value.custom)customIntent=true;else if(value.serviceTitle||value.workImage)customIntent=false;}
     if(!reopenCustom)updateCategory(value.category || category.id, value.serviceTitle);
-    if(value.custom&&!reopenCustom){service.value='';selectedWork=null;paintWork();updateService();}
+    if(value.custom&&!reopenCustom){service.value='';selectedWork=null;selectedPreset=null;paintPreset();paintWork();updateService();}
+    if(preset){selectedPreset=preset;paintPreset();}
+    else if(value.serviceTitle||(!value.custom&&value.workImage)){selectedPreset=null;paintPreset();}
     if(value.workImage&&data.images.includes(value.workImage)) { selectedWork={image:value.workImage,label:String(value.workLabel||'Выбранная работа').slice(0,140)};paintWork(); }
     if(presentationAdapter)presentationAdapter.open(value);
     else mount.closest('#request')?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+    if(freeTattooPlace)mount.dispatchEvent(new CustomEvent('kultura:request-selection',{bubbles:true,detail:{category:category.id,serviceId:service.value===''?null:category.services[Number(service.value)]?.canonicalId||null,preset:Boolean(preset),custom:Boolean(value.custom)}}));
   }
   window.KulturaRequest={select,registerBookingAdapter(adapter){
     if(!mount.dataset.bookingMode)return false;
@@ -215,6 +230,7 @@
     if(category.id==='color'&&field('color').value.trim())details.push(['Окрашивание',field('color').value.trim()]);
     if(category.id==='nails'&&field('nails').value.trim())details.push(['Маникюр',field('nails').value.trim()]);
     if(selectedWork)details.push(['Пример салона',selectedWork.label]);
+    if(selectedPreset)details.push(['Уточнение по образу',selectedPreset.note]);
     if(files.length)details.push(['Ваши референсы',files.map(f=>f.file.name).join('\n')]);
     if(field('comment').value.trim())details.push(['Пожелания',field('comment').value.trim()]);
     review.querySelector('.rq-dialog-content').innerHTML=`<p class="rq-eyebrow">Проверьте детали</p><h2>Вот как выглядит ваша заявка</h2><p class="rq-status">Это демо. Заявка не отправлена, запись не создана</p><dl class="rq-review">${details.map(([key,val])=>`<div><dt>${esc(key)}</dt><dd>${esc(val)}</dd></div>`).join('')}</dl><p class="rq-small">На рабочем сайте мастер увидит пожелания и референсы, а запись будет связана с расписанием салона. Подключение YCLIENTS — следующий этап</p><button class="rq-primary" type="button" data-rq-edit>Вернуться к заявке ${arrow}</button>`;
@@ -224,7 +240,7 @@
   });
   function localToday(){const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');}
   field('date').min=localToday();
-  form.addEventListener('reset',()=>{clearFiles();selectedWork=null;customIntent=false;paintWork();bookingAdapter?.reset?.();queueMicrotask(()=>updateCategory(neutralSelection?'':data.categories[0].id));});
+  form.addEventListener('reset',()=>{clearFiles();selectedWork=null;selectedPreset=null;customIntent=false;paintPreset();paintWork();bookingAdapter?.reset?.();queueMicrotask(()=>updateCategory(neutralSelection?'':data.categories[0].id));});
   window.addEventListener('pagehide',()=>{clearFiles();form.reset();dialogs.forEach(d=>{if(d.open)d.close();d.querySelector('.rq-review')?.remove();});});
   async function loadVendor(name){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=new URL('vendor/'+name,base).href;s.onload=resolve;s.onerror=reject;document.head.append(s);});}
   updateCategory(category.id);

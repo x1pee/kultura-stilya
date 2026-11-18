@@ -1,3 +1,90 @@
+/* Finite native-dialog motion. No prototype changes, cloned forms or network work. */
+(() => {
+ 'use strict';
+ if(!window.HTMLDialogElement)return;
+ const known='dialog#studio-request-dialog,dialog#studio-contacts-dialog,dialog.studio-contact-dialog,dialog.studio-widget-dialog,dialog#work-preview,dialog.rq-dialog';
+ const nativeShow=HTMLDialogElement.prototype.showModal,nativeClose=HTMLDialogElement.prototype.close;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)'),records=new WeakMap(),enhanced=new Set();
+ const OPEN_MS=220,CLOSE_MS=150;
+ let pageHidden=false;
+ const immediate=()=>reduced.matches||document.hidden||pageHidden;
+ const phase=(state,value)=>{state.phase=value;state.dialog.dataset.dialogMotionState=value;};
+ function clearTimer(state){clearTimeout(state.timer);state.timer=0;state.generation++;}
+ function snapshot(dialog){const s=getComputedStyle(dialog),back=getComputedStyle(dialog,'::backdrop');return{opacity:s.opacity,transform:s.transform,backdrop:back.opacity};}
+ function settleOpen(state){clearTimer(state);if(state.dialog.open)phase(state,'open');}
+ function finishClose(state){
+  clearTimer(state);const args=state.closeArgs;state.closeArgs=[];
+  if(state.dialog.open)nativeClose.apply(state.dialog,args);
+  phase(state,'closed');
+ }
+ function beginOpen(state,from=null){
+  clearTimer(state);const d=state.dialog;
+  d.style.setProperty('--studio-dialog-entry-opacity',from?.opacity||'0');
+  d.style.setProperty('--studio-dialog-entry-transform',from?.transform||'translateY(10px) scale(.99)');
+  d.style.setProperty('--studio-dialog-backdrop-entry',from?.backdrop||'0');
+  d.toggleAttribute('data-dialog-motion-skip',immediate());
+  phase(state,immediate()?'open':'opening');
+  if(!immediate()){const token=state.generation;state.timer=setTimeout(()=>{if(state.generation===token&&state.phase==='opening')settleOpen(state)},OPEN_MS+35);}
+ }
+ function requestClose(state,args){
+  const d=state.dialog;
+  if(!d.open)return nativeClose.apply(d,args);
+  if(state.phase==='closing')return;
+  clearTimer(state);state.closeArgs=args;
+  if(immediate()){d.setAttribute('data-dialog-motion-skip','');finishClose(state);return;}
+  const from=snapshot(d);
+  d.style.setProperty('--studio-dialog-exit-opacity',from.opacity);
+  d.style.setProperty('--studio-dialog-exit-transform',from.transform);
+  d.style.setProperty('--studio-dialog-backdrop-exit',from.backdrop);
+  phase(state,'closing');const token=state.generation;
+  state.timer=setTimeout(()=>{if(state.generation===token&&state.phase==='closing')finishClose(state)},CLOSE_MS+40);
+ }
+ function reopen(dialog){
+  const state=records.get(dialog);
+  if(!state||!dialog.open||state.phase!=='closing')return false;
+  const from=snapshot(dialog);state.closeArgs=[];beginOpen(state,from);return true;
+ }
+ function enhance(dialog){
+  if(!(dialog instanceof HTMLDialogElement)||records.has(dialog))return dialog;
+  const state={dialog,phase:'closed',timer:0,generation:0,closeArgs:[]};records.set(dialog,state);enhanced.add(state);
+  dialog.setAttribute('data-studio-dialog-motion','');
+  // These are own methods on this opt-in dialog; HTMLDialogElement.prototype stays native.
+  dialog.showModal=function(...args){
+   if(this!==dialog)return nativeShow.apply(this,args);
+   if(reopen(dialog))return;
+   const wasOpen=dialog.open,result=nativeShow.apply(dialog,args);
+   if(!wasOpen)beginOpen(state);return result;
+  };
+  dialog.close=function(...args){if(this!==dialog)return nativeClose.apply(this,args);return requestClose(state,args);};
+  dialog.addEventListener('cancel',event=>{if(event.defaultPrevented)return;event.preventDefault();requestClose(state,[]);});
+  dialog.addEventListener('animationend',event=>{
+   if(event.target!==dialog||event.pseudoElement)return;
+   if(event.animationName==='studio-dialog-enter'&&state.phase==='opening')settleOpen(state);
+   else if(event.animationName==='studio-dialog-exit'&&state.phase==='closing')finishClose(state);
+  });
+  dialog.addEventListener('close',()=>{if(!dialog.open){clearTimer(state);phase(state,'closed');}});
+  if(dialog.open)beginOpen(state);else phase(state,'closed');
+  return dialog;
+ }
+ function scan(node){if(node.nodeType!==1)return;if(node.matches(known))enhance(node);node.querySelectorAll(known).forEach(enhance);}
+ scan(document.documentElement);
+ const observer=new MutationObserver(changes=>{
+  for(const change of changes){
+   if(change.type==='childList'){change.addedNodes.forEach(scan);continue;}
+   const d=change.target;if(!d.matches(known))continue;enhance(d);const state=records.get(d);
+   if(d.open&&state.phase==='closed')beginOpen(state);
+   else if(!d.open&&state.phase!=='closed'){clearTimer(state);phase(state,'closed');}
+  }
+ });
+ observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['open']});
+ function settle(){for(const state of enhanced){if(state.phase==='closing')finishClose(state);else if(state.phase==='opening'){state.dialog.setAttribute('data-dialog-motion-skip','');settleOpen(state);}}}
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)settle();});
+ reduced.addEventListener('change',()=>{if(reduced.matches)settle();});
+ addEventListener('pagehide',()=>{pageHidden=true;settle();});
+ addEventListener('pageshow',()=>{pageHidden=false;});
+ window.StudioDialogMotion={enhance,reopen};
+})();
+
 
 (()=>{'use strict';
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -161,95 +248,118 @@
  addEventListener('pagehide',()=>{pageHidden=true;suspend()});addEventListener('pageshow',()=>{pageHidden=false;refreshVisibility();schedule()});refreshVisibility();state();
 })();
 
-/* Contact shortcuts read the existing footer; there is no second facts dataset. */
+/* One location section: native anchors work even without scripting. No geolocation or form data. */
 (() => {
  'use strict';
- const footer=document.querySelector('footer#contacts');
- const nav=document.getElementById('main-nav'),topline=document.querySelector('.hero-topline');
- if(!footer||!nav||!topline||document.getElementById('studio-contacts-dialog'))return;
+ const location=document.getElementById('location'),nav=document.getElementById('main-nav'),topline=document.querySelector('.hero-topline');
+ const configNode=document.getElementById('studio-location-data');
+ if(!location||!nav||!topline||!configNode)return;
+ const config=JSON.parse(configNode.textContent),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const pin='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
- const arrow='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg>';
- const clean=value=>String(value||'').replace(/\s+/g,' ').trim();
- function lines(node){
-  if(!node)return[];
-  const copy=node.cloneNode(true);copy.querySelectorAll('br').forEach(br=>br.replaceWith(document.createTextNode('\n')));
-  return copy.textContent.split('\n').map(clean).filter(Boolean);
+ const city=location.querySelector('address span')?.textContent||'',address=location.querySelector('address')?.lastChild.textContent||'';
+ const headerLink=document.createElement('a');headerLink.href='#location';headerLink.className='studio-contact-nav';headerLink.textContent='Как найти';nav.insertBefore(headerLink,nav.querySelector('.nav-cta'));
+ const heroLink=document.createElement('a');heroLink.href='#location';heroLink.className='studio-contact-pin';heroLink.innerHTML=pin+'<b></b>';
+ heroLink.querySelector('b').textContent=[city==='Санкт-Петербург'?'СПб':city,address.replace(/^проспект\s+/iu,'пр. ')].join(' · ');
+ heroLink.setAttribute('aria-label','Перейти к карте и адресу салона');topline.replaceChildren(heroLink);
+ const header=document.querySelector('.header');
+ function headerSize(){const h=header?.getBoundingClientRect().height||0,padding=parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)||0;document.documentElement.style.setProperty('--studio-anchor-offset',Math.max(0,Math.ceil(h+16-padding))+'px');}
+ headerSize();if('ResizeObserver'in window)new ResizeObserver(headerSize).observe(header);else addEventListener('resize',headerSize,{passive:true});
+ document.querySelectorAll('.work-card').forEach(card=>{card.addEventListener('click',event=>{if(event.target.closest('button,a,input,select,textarea'))return;card.querySelector('.work-select')?.click();});});
+ // True hash links provide browser history and a no-JS fallback. Wait for the menu to close before positioning.
+ document.addEventListener('click',event=>{
+  const link=event.target.closest('a[href="#location"]');if(!link||event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  event.preventDefault();document.body.classList.remove('menu-open');document.querySelector('.menu-toggle')?.setAttribute('aria-expanded','false');
+  if(window.location.hash!=='#location')history.pushState(null,'','#location');
+  requestAnimationFrame(()=>{headerSize();location.scrollIntoView({behavior:reduced.matches?'instant':'smooth',block:'start'});});
+ });
+ const ua=navigator.userAgent,ios=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),android=/Android/i.test(ua),mobile=ios||android;
+ location.dataset.mapMode=mobile?'app':'browser';
+ location.querySelector('[data-map-choice-title]').textContent=mobile?'В каком приложении открыть?':'Где открыть маршрут?';
+ const fallback=location.querySelector('[data-map-browser]');fallback.hidden=!mobile;
+ for(const provider of config.providers){
+  const link=location.querySelector('[data-map-provider="'+provider.id+'"]');if(!link)continue;
+  link.dataset.browserHref=provider.browser;
+  if(mobile){link.href=android?provider.android:provider.ios;link.removeAttribute('target');link.setAttribute('aria-label','Открыть маршрут в приложении '+provider.label);}
+  else{link.href=provider.browser;link.target='_blank';link.setAttribute('aria-label','Открыть маршрут в браузере: '+provider.label);}
+  link.addEventListener('click',()=>{if(mobile){fallback.href=provider.browser;fallback.textContent='Открыть '+provider.label+' в браузере ↗';}});
  }
- function facts(){
-  const top=footer.querySelector('.footer-top');
-  const location=top&&[...top.children].find(el=>el.querySelector('p')&&el.querySelector('a.text-link'));
-  const addressLines=lines(location?.querySelector('p'));
-  const rawCity=clean(location?.querySelector('small')?.textContent);
-  const city=rawCity.toLowerCase().replace(/(^|[\s-])\p{L}/gu,letter=>letter.toUpperCase());
-  const address=addressLines[0]||'';
-  const hasCity=city&&address.toLowerCase().includes(city.toLowerCase());
-  return{city,address:city&&!hasCity?city+', '+address:address,shortAddress:hasCity?address.slice(address.toLowerCase().indexOf(city.toLowerCase())+city.length).replace(/^[,\s]+/,''):address,hours:addressLines.slice(1).join(' · '),map:location?.querySelector('a.text-link[href]'),phone:footer.querySelector('a.footer-phone[href^="tel:"]'),socials:[...footer.querySelectorAll('.footer-links a[href]')]};
+ const mount=location.querySelector('[data-map-mount]'),button=location.querySelector('[data-load-studio-map]');let started=false;
+ function loadMap(){
+  if(started||!mount)return;started=true;mount.dataset.mapState='loading';
+  const frame=document.createElement('iframe');frame.src=config.embed;frame.title='Культура Стиля на Яндекс Картах';frame.loading='lazy';frame.referrerPolicy='no-referrer';frame.setAttribute('allowfullscreen','');frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-popups');
+  frame.addEventListener('load',()=>{mount.dataset.mapState='loaded';location.querySelector('[data-map-placeholder]')?.remove();},{once:true});mount.append(frame);
  }
- const initial=facts();if(!initial.address)return;
- const dialog=document.createElement('dialog');dialog.id='studio-contacts-dialog';dialog.className='studio-contact-dialog';dialog.setAttribute('aria-labelledby','studio-contacts-title');
- dialog.innerHTML='<header class="studio-contact-heading"><h2 id="studio-contacts-title">Как нас найти</h2><button type="button" data-studio-contacts-close aria-label="Закрыть контакты">×</button></header><div class="studio-contact-content"></div>';
- document.body.append(dialog);
- const content=dialog.querySelector('.studio-contact-content'),closeButton=dialog.querySelector('[data-studio-contacts-close]');
- const headerLink=document.createElement('button');headerLink.type='button';headerLink.className='studio-contact-nav';headerLink.dataset.openStudioContacts='';headerLink.textContent='Как найти';
- nav.insertBefore(headerLink,nav.querySelector('.nav-cta'));
- const heroLink=document.createElement('button');heroLink.type='button';heroLink.className='studio-contact-pin';heroLink.dataset.openStudioContacts='';heroLink.innerHTML=pin+'<b></b>';
- topline.replaceChildren(heroLink);
- for(const trigger of[headerLink,heroLink]){trigger.setAttribute('aria-haspopup','dialog');trigger.setAttribute('aria-controls',dialog.id);}
- function updatePin(value){
-  const city=value.city.toLowerCase()==='санкт-петербург'?'СПб':value.city;
-  const compact=value.shortAddress.replace(/^проспект\s+/iu,'пр. ');
-  heroLink.querySelector('b').textContent=[city,compact].filter(Boolean).join(' · ');
-  heroLink.setAttribute('aria-label','Открыть адрес и часы работы: '+value.address);
- }
- function publicLink(source,className){
-  if(!source)return null;
-  const href=source.getAttribute('href');
-  if(!href||!/^https:\/\//i.test(href))return null;
-  const link=source.cloneNode(true);link.className=className;link.target='_blank';link.rel='noopener noreferrer';
-  return link;
- }
- function render(){
-  const value=facts();updatePin(value);content.replaceChildren();
-  const address=document.createElement('section');address.className='studio-contact-location';
-  const label=document.createElement('p');label.className='studio-contact-label';label.textContent='Адрес';
-  const main=document.createElement('p');main.className='studio-contact-address';main.textContent=value.address;address.append(label,main);
-  if(value.hours){const hours=document.createElement('p');hours.className='studio-contact-hours';hours.textContent=value.hours;address.append(hours);}
-  const map=publicLink(value.map,'studio-contact-route');if(map){map.replaceChildren(document.createTextNode('Построить маршрут'));map.insertAdjacentHTML('beforeend',arrow);address.append(map);}
-  content.append(address);
-  if(value.phone){const call=document.createElement('a');call.className='studio-contact-phone';call.href=value.phone.getAttribute('href');const small=document.createElement('small');small.textContent='Позвонить в салон';const number=document.createElement('strong');number.textContent=clean(value.phone.textContent);call.append(small,number);call.insertAdjacentHTML('beforeend',arrow);content.append(call);}
-  const socials=document.createElement('div');socials.className='studio-contact-socials';socials.setAttribute('aria-label','Мессенджеры и социальные сети');
-  value.socials.forEach(source=>{const link=publicLink(source,'studio-contact-social');if(link)socials.append(link)});if(socials.childElementCount)content.append(socials);
- }
- let origin=null,lock=null,scrollPosition=0;
- const visible=element=>Boolean(element?.isConnected&&element.getClientRects().length&&getComputedStyle(element).visibility!=='hidden');
- function open(trigger){
-  if(dialog.open)return;
-  render();origin=trigger||document.activeElement;scrollPosition=window.scrollY;
-  document.body.classList.remove('menu-open');document.querySelector('.menu-toggle')?.setAttribute('aria-expanded','false');
-  if(!document.querySelector('dialog[open]')){
-   lock={position:document.body.style.position,top:document.body.style.top,width:document.body.style.width};
-   const width=document.body.getBoundingClientRect().width;
-   document.body.style.position='fixed';document.body.style.top=-scrollPosition+'px';document.body.style.width=width+'px';
+ button?.addEventListener('click',loadMap);
+ if('IntersectionObserver'in window){const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){loadMap();observer.disconnect();}},{rootMargin:'120px 0px'});observer.observe(mount);}
+})();
+
+/* Studio category glass: presentation only; aria-pressed stays owned by request.js. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ function install(){
+  const dialog=document.getElementById('studio-request-dialog');
+  const strip=dialog?.querySelector('.rq-categories');
+  if(!strip)return false;
+  if(strip.dataset.categoryGlassReady==='true')return true;
+  const chips=[...strip.querySelectorAll('.rq-cat[data-rq-category]')];
+  if(!chips.length)return false;
+  const glass=document.createElement('span');glass.className='studio-category-glass';glass.setAttribute('aria-hidden','true');strip.prepend(glass);
+  strip.dataset.categoryGlassReady='true';strip.dataset.glassSelection='false';strip.dataset.glassStatic='true';
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+  let frame=0,visible=false,pageHidden=false,painted=false,reveal=null;
+  const isOpen=()=>dialog.open&&!document.hidden&&!pageHidden;
+  function edgeState(){
+   const maximum=Math.max(0,strip.scrollWidth-strip.clientWidth);
+   strip.style.setProperty('--category-fade-left',strip.scrollLeft>2?'18px':'0px');
+   strip.style.setProperty('--category-fade-right',maximum-strip.scrollLeft>2?'18px':'0px');
+   strip.dataset.glassOverflow=String(maximum>2);
   }
-  dialog.showModal();dialog.scrollTop=0;closeButton.focus({preventScroll:true});
+  function paint(){
+   frame=0;if(!isOpen())return;
+   const selected=chips.find(chip=>chip.getAttribute('aria-pressed')==='true'&&!chip.disabled&&!chip.hidden);
+   const canMove=visible&&!reduced.matches;
+   strip.dataset.glassStatic=String(!canMove||!painted);
+   if(selected&&selected.offsetWidth){
+    glass.style.width=selected.offsetWidth+'px';glass.style.height=selected.offsetHeight+'px';
+    glass.style.transform='translate3d('+selected.offsetLeft+'px,'+selected.offsetTop+'px,0)';
+    strip.dataset.glassSelection='true';painted=true;
+   }else{strip.dataset.glassSelection='false';painted=false;}
+   if(reveal?.offsetWidth){
+    const target=Math.max(0,Math.min(strip.scrollWidth-strip.clientWidth,reveal.offsetLeft-(strip.clientWidth-reveal.offsetWidth)/2));
+    if(Math.abs(target-strip.scrollLeft)>1)strip.scrollTo({left:target,behavior:canMove?'smooth':'instant'});
+   }
+   reveal=null;edgeState();
+  }
+  function schedule(chip=null){
+   if(chip)reveal=chip;
+   if(!isOpen()){strip.dataset.glassStatic='true';if(frame)cancelAnimationFrame(frame);frame=0;return;}
+   if(!frame)frame=requestAnimationFrame(paint);
+  }
+  function selectedChanged(){schedule(chips.find(chip=>chip.getAttribute('aria-pressed')==='true'));}
+  strip.addEventListener('scroll',()=>schedule(),{passive:true});
+  strip.addEventListener('focusin',event=>{const chip=event.target.closest('.rq-cat');if(chip&&strip.contains(chip))schedule(chip);});
+  const mutations=new MutationObserver(records=>{
+   if(records.some(record=>record.target===dialog)){painted=false;selectedChanged();}
+   else selectedChanged();
+  });
+  mutations.observe(strip,{subtree:true,attributes:true,attributeFilter:['aria-pressed','disabled','hidden']});
+  mutations.observe(dialog,{attributes:true,attributeFilter:['open']});
+  const size=typeof ResizeObserver==='function'?new ResizeObserver(()=>schedule()):null;
+  size?.observe(strip);chips.forEach(chip=>size?.observe(chip));
+  const visibility=new IntersectionObserver(entries=>{
+   visible=Boolean(entries[0]?.isIntersecting&&entries[0].intersectionRect.width>1&&entries[0].intersectionRect.height>1);
+   if(!visible)strip.dataset.glassStatic='true';schedule();
+  },{root:dialog.querySelector('.studio-request-scroll'),threshold:[0,1]});visibility.observe(strip);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)strip.dataset.glassStatic='true';schedule();});
+  reduced.addEventListener('change',()=>{strip.dataset.glassStatic='true';schedule();});
+  window.addEventListener('resize',()=>schedule(),{passive:true});
+  window.addEventListener('pagehide',()=>{pageHidden=true;strip.dataset.glassStatic='true';if(frame)cancelAnimationFrame(frame);frame=0;});
+  window.addEventListener('pageshow',()=>{pageHidden=false;schedule();});
+  schedule();return true;
  }
- function close(){if(dialog.open)dialog.close();}
- closeButton.addEventListener('click',close);
- dialog.addEventListener('close',()=>{
-  if(lock){Object.assign(document.body.style,lock);lock=null;window.scrollTo({top:scrollPosition,behavior:'instant'});}
-  const remaining=[...document.querySelectorAll('dialog[open]')].at(-1);
-  let target=visible(origin)?origin:document.querySelector('.menu-toggle');
-  if(!visible(target))target=heroLink;
-  if(remaining&&!remaining.contains(target))target=remaining.querySelector('button,a[href],[tabindex="0"]');
-  target?.focus({preventScroll:true});origin=null;
- });
- dialog.addEventListener('click',event=>{if(event.target!==dialog)return;const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close()});
- dialog.addEventListener('keydown',event=>{
-  if(event.key!=='Tab')return;
-  const items=[...dialog.querySelectorAll('button:not(:disabled),a[href],[tabindex="0"]')].filter(visible),first=items[0],last=items.at(-1);
-  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
-  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
- });
- document.addEventListener('click',event=>{const trigger=event.target.closest('[data-open-studio-contacts]');if(!trigger)return;event.preventDefault();open(trigger)});
- addEventListener('pagehide',close);updatePin(initial);
+ if(install())return;
+ const mount=new MutationObserver(()=>{if(install())mount.disconnect();});
+ mount.observe(document.body,{childList:true,subtree:true});
+ window.addEventListener('pagehide',()=>mount.disconnect(),{once:true});
 })();

@@ -66,6 +66,56 @@
   });
   form.addEventListener('reset',()=>queueMicrotask(()=>{referenceDetails.open=false;compactCategory=null;syncCompact(true)}));
   syncCompact();
+  // Deliberate choices advance only this dialog; typing never scrolls or moves focus.
+  let progressTimer=0,timeIntent=0,uploadIntent=0;
+  const find=selector=>mount.querySelector(selector);
+  const cancelProgress=()=>{clearTimeout(progressTimer);progressTimer=0;};
+  const visibleBlock=element=>Boolean(element&&!element.hidden&&element.getClientRects().length);
+  function detailBlock(){return ['[data-rq-tattoo]','[data-rq-color]','[data-rq-nails]','[data-rq-upload]'].map(find).find(visibleBlock)||find('.rq-contact-column');}
+  function progress(resolve,delay=110,source=null){
+    cancelProgress();progressTimer=setTimeout(()=>{
+      progressTimer=0;
+      if(!dialog.open||dialog.dataset.dialogMotionState==='closing'||document.hidden)return;
+      const active=document.activeElement;
+      if([...document.querySelectorAll('dialog[open]')].some(d=>d!==dialog)&&!dialog.contains(active))return;
+      if(source&&active!==source&&active?.matches('input,select,textarea,[contenteditable=true]'))return;
+      const target=typeof resolve==='function'?resolve():resolve;if(!visibleBlock(target))return;
+      const box=scroll.getBoundingClientRect(),rect=target.getBoundingClientRect();
+      if(rect.top>=box.top+12&&rect.top+Math.min(rect.height,170)<=box.bottom-20)return;
+      const top=Math.max(0,Math.min(scroll.scrollHeight-scroll.clientHeight,scroll.scrollTop+rect.top-box.top-16));
+      scroll.scrollTo({top,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    },delay);
+  }
+  mount.addEventListener('kultura:request-selection',()=>progress(()=>find('#rq-service')?.closest('.rq-field'),260));
+  form.addEventListener('change',event=>{if(event.target.id==='rq-service'&&event.target.value!=='')progress(()=>find('.sb'),110,event.target);});
+  form.addEventListener('click',event=>{
+    if(event.target.closest('[data-rq-category]'))progress(()=>find('#rq-service')?.closest('.rq-field'));
+    else if(event.target.closest('.sb-person'))progress(()=>find('[data-sb-widget]')||find('[data-sb-content]'));
+  });
+  document.addEventListener('click',event=>{if(event.target.closest('[data-widget-apply],.sb-slot'))timeIntent=performance.now();},true);
+  form.addEventListener('change',event=>{if(event.target.id==='rq-files')uploadIntent=performance.now();},true);
+  form.addEventListener('paste',event=>{if(event.clipboardData?.files?.length)uploadIntent=performance.now();},true);
+  form.addEventListener('drop',event=>{if(event.dataTransfer?.files?.length)uploadIntent=performance.now();},true);
+  form.addEventListener('blur',event=>{
+    const input=event.target;if(!input.value?.trim())return;
+    if(['rq-color','rq-nails'].includes(input.id))progress(()=>find('[data-rq-upload]'),110,input);
+    else if(input.id==='rq-place'&&input.value.trim().length>=2)progress(()=>find('#rq-length')?.closest('.rq-field'),110,input);
+    else if(input.id==='rq-length'&&input.checkValidity())progress(()=>find('[data-rq-upload]'),110,input);
+    else if(input.id==='rq-name'&&input.value.trim().length>=2)progress(()=>find('#rq-phone')?.closest('.rq-field'),110,input);
+    else if(input.id==='rq-phone'&&input.value.replace(/\D/g,'').length>=7&&!find('#rq-phone-error').textContent)progress(()=>find('#rq-comment')?.closest('.rq-field'),110,input);
+    else if(input.id==='rq-comment')progress(()=>find('button[type=submit]'),110,input);
+  },true);
+  const flowObserver=new MutationObserver(changes=>{
+    const note=find('.sb-selection');
+    if(timeIntent&&performance.now()-timeIntent<2000&&note&&!note.hidden&&note.textContent.startsWith('Выбрано:')&&changes.some(r=>r.target===note||note.contains(r.target))){timeIntent=0;progress(detailBlock,260);}
+    const previews=find('.rq-previews');
+    if(uploadIntent&&performance.now()-uploadIntent<10000&&previews?.childElementCount&&changes.some(r=>r.target===previews||previews.contains(r.target))){uploadIntent=0;progress(()=>find('.rq-contact-column'),180);}
+  });
+  const timeNote=find('.sb-selection'),previews=find('.rq-previews');
+  if(timeNote)flowObserver.observe(timeNote,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden']});
+  if(previews)flowObserver.observe(previews,{subtree:true,childList:true});
+  scroll.addEventListener('wheel',cancelProgress,{passive:true});scroll.addEventListener('touchstart',cancelProgress,{passive:true});
+  dialog.addEventListener('close',cancelProgress);
   const close=dialog.querySelector('[data-dialog-close]');
   const submit=mount.querySelector('button[type="submit"]');
   submit.classList.add('rq-orbit');
@@ -104,5 +154,5 @@
   document.addEventListener('click',e=>{const trigger=e.target.closest('a[href="#request"],[data-open-request]');if(!trigger)return;e.preventDefault();if(trigger.matches('[data-open-request]'))window.KulturaRequest.select({custom:true,trigger});else open({trigger});});
   document.addEventListener('visibilitychange',motion);reduced.addEventListener('change',motion);
   window.KulturaRequest.setPresentationAdapter({open});
-  window.addEventListener('pagehide',()=>{observer.disconnect();compactObserver.disconnect();if(dialog.open)dialog.close();});
+  window.addEventListener('pagehide',()=>{cancelProgress();flowObserver.disconnect();observer.disconnect();compactObserver.disconnect();if(dialog.open)dialog.close();});
 })();
