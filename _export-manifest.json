@@ -1,0 +1,266 @@
+{
+  "format": 1,
+  "entry": "cinema-studio/index.html",
+  "files": [
+    {
+      "path": ".nojekyll",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2534,
+      "sha256": "04ff0c68cb4da8c1283bb271e720d49bbe94b61b5144015a7b95c437778bb098"
+    },
+    {
+      "path": "assets/Lora-Italic-Variable.ttf",
+      "bytes": 221232,
+      "sha256": "22d8d8854b53807aa664ca34f2031a9ed57a1d0dea296b8b96cdd3aad937a2b3"
+    },
+    {
+      "path": "assets/Manrope-Variable.ttf",
+      "bytes": 164700,
+      "sha256": "3ae11c49db0455a3cc33e37d380f20fdb8c7f8b41dc07625c177e3d87a9d6ae6"
+    },
+    {
+      "path": "assets/barber-cut.jpg",
+      "bytes": 81385,
+      "sha256": "35db5f3493132b03a005a11a70ab655eb0db82d8b857325f0893850f1510fae8"
+    },
+    {
+      "path": "assets/barber-process.jpg",
+      "bytes": 86183,
+      "sha256": "d1ea6958a3e2aff9d913e3cdc40829915d37868726706e87802507fa8bc32d71"
+    },
+    {
+      "path": "assets/brows.jpg",
+      "bytes": 68990,
+      "sha256": "5cac9c7261d428b70b9d231866d39793a5758662d9d90f675b5cbfc7c1c16a08"
+    },
+    {
+      "path": "assets/hair-blonde.jpg",
+      "bytes": 66167,
+      "sha256": "10b938a4d8128ddebf7ac3e2c3596decab060edd3909c9b3e4b737e20b06fab7"
+    },
+    {
+      "path": "assets/hair-bob.jpg",
+      "bytes": 101983,
+      "sha256": "3eb732930c1ea21787cb3cdc605f2c3e7cc3424edbda6f33d959b0ca056fd31e"
+    },
+    {
+      "path": "assets/hair-caramel.jpg",
+      "bytes": 109191,
+      "sha256": "35b44ccce09413d4be294760bcc441f113ae4eee201cad63e3efe253daeddb55"
+    },
+    {
+      "path": "assets/hair-red.jpg",
+      "bytes": 126841,
+      "sha256": "8105418c61c5f5ae4805b43455b1841e40daeb2a4ec9e30f549d4e889a6c8304"
+    },
+    {
+      "path": "assets/lashes.jpg",
+      "bytes": 76106,
+      "sha256": "40b476ff2544f81b065e4dc991626b7d76ab20828407208241462dd003b910e9"
+    },
+    {
+      "path": "assets/logo.jpg",
+      "bytes": 75990,
+      "sha256": "12db44d48c9f72c2cf1b007fd17697d337d361bf0062814ab7db6b475705e430"
+    },
+    {
+      "path": "assets/nails-art.jpg",
+      "bytes": 94016,
+      "sha256": "a4fb27b2f3d35046433567971ca2d234b5890c2deb5e0033da3c3cd8e473ad41"
+    },
+    {
+      "path": "assets/nails-nude.jpg",
+      "bytes": 43359,
+      "sha256": "155a2e688fa3bb72a5347f4a1413ca76634699bd5c76d04bb445266af4c0df2e"
+    },
+    {
+      "path": "assets/nails-red.jpg",
+      "bytes": 39347,
+      "sha256": "b0c717c28f88051843b06170da430e0e87e15d77937be9d596a604baf373c620"
+    },
+    {
+      "path": "assets/salon-barber.jpg",
+      "bytes": 202947,
+      "sha256": "24946fda3d9e56060ddbe8388f116dcb867d1946c50360cfc2ce63590ac506bc"
+    },
+    {
+      "path": "assets/salon-chairs.jpg",
+      "bytes": 170932,
+      "sha256": "9a0ed704f67cfa91ac5ae0923733b70af0c2803a0ee2e4a8e0c360410965797c"
+    },
+    {
+      "path": "assets/salon-lounge.jpg",
+      "bytes": 164752,
+      "sha256": "af979bf9dace03ce63a94a305847f4d05d1d9e64b43240bb298a77cc3f82e291"
+    },
+    {
+      "path": "assets/salon-main.jpg",
+      "bytes": 170808,
+      "sha256": "c9642ad4fa0a4bed859e73b18f336fc785862d3ad89ffa2fe4fd958e8765d0bb"
+    },
+    {
+      "path": "assets/salon-nails.jpg",
+      "bytes": 146084,
+      "sha256": "8294e8b80d3a93b83982f0c4c43ab16cc58119dfd4d77216b0a488265d067c0b"
+    },
+    {
+      "path": "assets/salon-reception.jpg",
+      "bytes": 171419,
+      "sha256": "945dddcc11039e8c9ac221f71d4473e55a7c148314fae4f8dbfa65a0d77f57df"
+    },
+    {
+      "path": "assets/storefront-night.jpg",
+      "bytes": 118458,
+      "sha256": "bd695d850b6ed3515faf56c3ba858e826e0fa68f43020329f4fd13d0d43b0b58"
+    },
+    {
+      "path": "assets/storefront.jpg",
+      "bytes": 187080,
+      "sha256": "f01256c51cba779e9eeeb68dd6041dddd94c27dd0fc2e318ca3ad9a1dbcc748a"
+    },
+    {
+      "path": "assets/studio-staff-2606825.jpg",
+      "bytes": 4730,
+      "sha256": "04ca11926cadc1452b292ff0d5dc36556f87b8a90154467ec0c4b803db1bdec9"
+    },
+    {
+      "path": "assets/studio-staff-2694879.jpg",
+      "bytes": 4676,
+      "sha256": "c23a73dd6323c4dc05ee3224be9559d38cdc0c90d0f2983b88a4207929832d90"
+    },
+    {
+      "path": "assets/studio-staff-2694880.jpg",
+      "bytes": 4672,
+      "sha256": "73510421d034b237a36bb14d4c4eaec439b0d4edffef6d17a723103520e2408c"
+    },
+    {
+      "path": "assets/studio-staff-3249878.png",
+      "bytes": 40242,
+      "sha256": "af7791b817583915d54e68db41de0561a1d0e0a807e161420ba9823cdec0e50b"
+    },
+    {
+      "path": "assets/studio-staff-3259298.png",
+      "bytes": 40242,
+      "sha256": "7dc27e7f5e4c67a6459c88b1d89130d97d00959044d17b612614a67cc24fb4e1"
+    },
+    {
+      "path": "assets/studio-staff-4959944.png",
+      "bytes": 40242,
+      "sha256": "34be1191d2f3babae01465a6ac3916f23ac5239d488033a6310a8da0e4e7259c"
+    },
+    {
+      "path": "assets/studio-staff-5586333.png",
+      "bytes": 40242,
+      "sha256": "f46299ea546c0c991091b92295bd9872bf7fac8afadce9428d02bd9b60a86053"
+    },
+    {
+      "path": "assets/studio-staff-5912418.png",
+      "bytes": 40242,
+      "sha256": "2b9544497ceb0f238bc33f40aeb99793e443d6424c4b78c4f1d7d0d702db7dcd"
+    },
+    {
+      "path": "assets/studio-staff-5937435.png",
+      "bytes": 40242,
+      "sha256": "11c6e28abcca0feca4c5a756dee251ceb167f484e0853628ae5d9c4a8750df35"
+    },
+    {
+      "path": "assets/tattoo-back.jpg",
+      "bytes": 70853,
+      "sha256": "4681e359248120562d226670da9ecbee3269e36f1289c655bb17d4138aa4656e"
+    },
+    {
+      "path": "assets/tattoo-fine.jpg",
+      "bytes": 44657,
+      "sha256": "8a2e6e65da1de05fdf934dde513482840ed51417ff82db7d653e38fe0dc36ef3"
+    },
+    {
+      "path": "cinema-studio/app.js",
+      "bytes": 18275,
+      "sha256": "c053c8fb8e21b4f697be9c725cdbb4b473e484296d231499496e2b615be3d39f"
+    },
+    {
+      "path": "cinema-studio/index.html",
+      "bytes": 55039,
+      "sha256": "db60f749289adf22edcdacb7b23eee20bd08c8e2938e8a68cdeea22e8a517619"
+    },
+    {
+      "path": "cinema-studio/style.css",
+      "bytes": 80258,
+      "sha256": "6b6db7c618c10de750e990d4e0e0cc985226b456ae8473f45fff206a188d3d90"
+    },
+    {
+      "path": "index.html",
+      "bytes": 420,
+      "sha256": "4622b7f8e3906bd5833cc7c107318be2cc20b7a5efbc21d2a0ce9ef5f8732123"
+    },
+    {
+      "path": "shared/request.css",
+      "bytes": 8109,
+      "sha256": "c38eb7fcabf91583d871d292e6d30db8522ad081e25624bfebc8a9dd978da9ab"
+    },
+    {
+      "path": "shared/request.js",
+      "bytes": 28498,
+      "sha256": "45ebe2b46ca63367a4d673ff419ea01cfe4fc6ba80793f7a6a1fe0e66fab9745"
+    },
+    {
+      "path": "shared/studio-booking.css",
+      "bytes": 4283,
+      "sha256": "6b749b33df2fcdbc10c34df8c3b0bffbc4ccc152e8c609241f6271677fb47810"
+    },
+    {
+      "path": "shared/studio-booking.js",
+      "bytes": 15779,
+      "sha256": "f26f34ef686abf1890eb2e795c34d1c39fc7476fcc2419c2bfd8461e6d57af12"
+    },
+    {
+      "path": "shared/studio-modal.css",
+      "bytes": 21704,
+      "sha256": "6e5ae726ecb65a15f903602cf8d5c804660bfc169050bbc7be5befe0658f3079"
+    },
+    {
+      "path": "shared/studio-modal.js",
+      "bytes": 8869,
+      "sha256": "abda03ae017cc4397b9bc3ae50ac92aa1c104d4a0aab94f061ad90afd5ba9151"
+    },
+    {
+      "path": "shared/studio-request-data.js",
+      "bytes": 29895,
+      "sha256": "7a1dd149a82844ab838b95d2aa354460c041bd2c9a122e8e4b67ffb0a7dd2bfc"
+    },
+    {
+      "path": "shared/studio-staff-data.js",
+      "bytes": 1925,
+      "sha256": "e3ad609b5e16faed21c5745a93257af4b85fda0725b90d6138a016f4b6144121"
+    },
+    {
+      "path": "shared/studio-widget.js",
+      "bytes": 6107,
+      "sha256": "9d975cd90793bf45d43490ae09f83a88efdd9258bf82fb3ada35ecfe7bbf096e"
+    },
+    {
+      "path": "shared/vendor/libphonenumber-LICENSE.txt",
+      "bytes": 1108,
+      "sha256": "ea6fc5fe0f905c5fdedd8f160f1dd73ce739004fc5f35656b35258aea126dbde"
+    },
+    {
+      "path": "shared/vendor/libphonenumber-max.js",
+      "bytes": 252191,
+      "sha256": "1c0013a6cd33e5d55337efddc7faa540eb76542930850477426c15bfc6259044"
+    },
+    {
+      "path": "shared/vendor/phone-examples.js",
+      "bytes": 4095,
+      "sha256": "feace1cc8f4d22e6a3f299976551e1ddeef1f6b33168fae6349eefd2ee2c1b8e"
+    },
+    {
+      "path": "shared/vendor/phone-input.js",
+      "bytes": 5971,
+      "sha256": "66bf2bf3724cea378a31d98aee71499c94a40e5f9b963b0ba1d2785608e5c50a"
+    }
+  ]
+}
