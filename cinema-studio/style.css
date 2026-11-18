@@ -1105,34 +1105,12 @@ html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .stud
   .studio #works .work-card:hover{transform:none;translate:none;transition:none}
 }
 
-/* Local scrims follow the copy; the remaining salon photograph stays bright. */
-body.studio[data-studio-hero=cover-left] .hero-heading{
-  position:relative;
-  isolation:isolate;
-}
-body.studio[data-studio-hero=cover-left] .hero-heading::before{
-  content:"";
-  position:absolute;
-  inset:-32px -58px -34px -50px;
-  z-index:-1;
-  pointer-events:none;
-  background:radial-gradient(ellipse at 38% 60%,#080b0b80 0%,#080b0b40 45%,#080b0b12 64%,transparent 78%);
-}
+/* Shadows follow the glyphs; there is no separate dark panel over the photograph. */
 body.studio[data-studio-hero=cover-left] .hero-heading h1{
-  text-shadow:0 2px 24px #00000050;
+  text-shadow:0 2px 4px #00000066,0 0 16px #00000045;
 }
 body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address){
-  position:relative;
-  isolation:isolate;
-  text-shadow:0 1px 5px #000000b3;
-}
-body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address)::before{
-  content:"";
-  position:absolute;
-  inset:-16px -34px -18px -24px;
-  z-index:-1;
-  pointer-events:none;
-  background:radial-gradient(ellipse at 38% 50%,#080b0bb8 0%,#080b0b61 48%,transparent 78%);
+  text-shadow:0 1px 2px #000000a6,0 0 7px #00000080;
 }
 body.studio[data-studio-hero=cover-left] .hero .primary{
   transition:transform .22s ease,background-color .22s ease,box-shadow .22s ease;
@@ -1144,21 +1122,70 @@ body.studio[data-studio-hero=cover-left] .hero .primary{
   }
 }
 body.studio[data-studio-hero=cover-left] .hero .primary:active{transform:translateY(0) scale(.985)}
-@media(max-width:620px){
-  body.studio[data-studio-hero=cover-left] .hero-heading::before{inset:-24px -30px -26px -26px}
-  body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address)::before{inset:-12px -24px -14px -18px}
-}
 @media(prefers-reduced-motion:reduce){
   body.studio[data-studio-hero=cover-left] .hero .primary,
   body.studio[data-studio-hero=cover-left] .hero .primary:is(:hover,:active){transition:none;transform:none}
 }
 /* Short landscape uses the existing dark-on-paper hero instead of the photo cover. */
 @media(min-width:621px) and (max-width:900px) and (max-height:560px){
-  body.studio[data-studio-hero=cover-left] .hero-heading::before,
-  body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address)::before{content:none;display:none}
   body.studio[data-studio-hero=cover-left] .hero-heading h1,
   body.studio[data-studio-hero=cover-left] .hero-bottom>p:not(.hero-address){text-shadow:none}
 }
+@media(min-width:621px){
+  .studio .header .brand>span:last-child{font-size:15px}
+  .studio .header .brand small{font-size:8px}
+}
+@media(min-width:1251px){
+  .studio .header .brand>span:last-child{font-size:16px}
+  .studio .header .nav{font-size:12px}
+  .studio .header .nav-cta{font-size:11px}
+}
+@media(min-width:1121px) and (max-width:1250px){
+  .studio .header .nav{font-size:11px}
+  .studio .header .nav-cta{font-size:10px}
+}
+@media(min-width:901px) and (max-width:1120px){
+  .studio .header .nav-cta{font-size:12px}
+}
+
+/* One external certificate choice follows the actual bookable categories. */
+.studio #services .studio-gift{
+  --gift-bg:#fffaf1;--gift-text:#173b2d;--gift-muted:#5d6d61;--gift-line:#49634c33;--gift-card:#173b2d;--gift-on-card:#fffaf1;--gift-action:#e5ebde;--gift-on-action:#173b2d;
+  display:grid;grid-template-columns:160px minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:24px;row-gap:7px;
+  margin-top:15px;padding:20px 24px;border:1px solid var(--gift-line);border-radius:20px;background:var(--gift-bg);color:var(--gift-text);
+}
+html[data-studio-theme=mono] .studio #services .studio-gift{--gift-bg:#fffdf8;--gift-text:#242320;--gift-muted:#686157;--gift-line:#756b5933;--gift-card:#28251f;--gift-on-card:#fffdf8;--gift-action:#e8e2d7;--gift-on-action:#242320}
+html[data-studio-preview-theme][data-studio-theme] .studio #services .studio-gift{--gift-bg:var(--pv-paper);--gift-text:var(--pv-paper-ink);--gift-muted:var(--pv-paper-muted);--gift-line:var(--pv-paper-line);--gift-card:var(--pv-accent);--gift-on-card:var(--pv-on-accent);--gift-action:var(--pv-accent);--gift-on-action:var(--pv-on-accent)}
+.studio #services .studio-gift-art{grid-column:1;grid-row:1/3;min-width:0;padding:4px 2px}
+.studio #services .studio-gift-card{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;width:156px;height:94px;box-sizing:border-box;padding:13px 15px;overflow:hidden;border:1px solid color-mix(in srgb,var(--gift-on-card) 26%,transparent);border-radius:12px;background:var(--gift-card);color:var(--gift-on-card);box-shadow:0 7px 15px #17271c16;transform:rotate(-5deg)}
+.studio #services .studio-gift-card::before,.studio #services .studio-gift-card::after{content:"";position:absolute;z-index:-1;pointer-events:none;border:1px solid currentColor;border-radius:50%;opacity:.2}
+.studio #services .studio-gift-card::before{width:108px;height:108px;right:-49px;top:-31px}
+.studio #services .studio-gift-card::after{width:74px;height:74px;right:-32px;bottom:-34px}
+.studio #services .studio-gift-brand{font:italic 21px/.96 Lora,Georgia,serif;letter-spacing:-.03em}
+.studio #services .studio-gift-card-label{font-size:8px;line-height:1.25;letter-spacing:.015em}
+.studio #services .studio-gift h3{grid-column:2;grid-row:1;align-self:end;margin:0;font-size:20px;line-height:1.25;letter-spacing:-.025em;font-weight:500;color:var(--gift-text)}
+.studio #services .studio-gift-note{grid-column:2;grid-row:2;align-self:start;max-width:57ch;margin:0;font-size:12px;line-height:1.65;color:var(--gift-muted)}
+.studio #services .studio-gift-action{grid-column:3;grid-row:1/3;display:inline-flex;align-items:center;justify-content:center;min-width:0;min-height:44px;box-sizing:border-box;padding:12px 17px;border:1px solid var(--gift-line);border-radius:999px;background:var(--gift-action);color:var(--gift-on-action);font-size:12px;font-weight:600;line-height:1.4;text-align:center;text-decoration:none;white-space:normal;transition:border-color .18s}
+.studio #services .studio-gift-action:focus-visible{outline:2px solid var(--gift-text);outline-offset:4px}
+@media(hover:hover){.studio #services .studio-gift-action:hover{border-color:var(--gift-text)}}
+@media(max-width:900px){
+  .studio #services .studio-gift{grid-template-columns:144px minmax(0,1fr);grid-template-rows:auto auto auto;column-gap:20px;padding:19px 21px;row-gap:8px}
+  .studio #services .studio-gift-art{grid-row:1/4}
+  .studio #services .studio-gift-card{width:140px;height:90px}
+  .studio #services .studio-gift h3{align-self:start}
+  .studio #services .studio-gift-action{grid-column:2;grid-row:3;justify-self:start;margin-top:3px}
+}
+@media(max-width:620px){
+  .studio #services .studio-gift{grid-template-columns:minmax(0,1fr) 94px;grid-template-rows:auto auto auto;column-gap:14px;row-gap:11px;padding:16px}
+  .studio #services .studio-gift-art{grid-column:2;grid-row:1;align-self:center;padding:3px 0}
+  .studio #services .studio-gift-card{width:92px;height:64px;justify-content:center;padding:9px 10px;border-radius:9px;transform:rotate(-4deg)}
+  .studio #services .studio-gift-brand{font-size:17px}
+  .studio #services .studio-gift-card-label{display:none}
+  .studio #services .studio-gift h3{grid-column:1;grid-row:1;align-self:center;font-size:19px;line-height:1.25;overflow-wrap:anywhere}
+  .studio #services .studio-gift-note{grid-column:1/-1;grid-row:2}
+  .studio #services .studio-gift-action{grid-column:1/-1;grid-row:3;justify-self:stretch;width:100%;margin-top:0}
+}
+@media(prefers-reduced-motion:reduce){.studio #services .studio-gift-action{transition:none}}
 
 /* Equal halves cover the viewport; duration scales with width to keep a calm 16px/s. */
 html:root[lang][data-studio-theme] body.studio[data-studio-ribbon=marquee] .studio-marquee-track{animation-duration:var(--studio-marquee-duration,85s)}

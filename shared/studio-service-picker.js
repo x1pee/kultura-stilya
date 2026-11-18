@@ -47,6 +47,7 @@
   trigger.setAttribute('aria-labelledby', label.id + ' ' + value.id);
   list.setAttribute('aria-labelledby', label.id);
   summaryTitle.classList.add('studio-service-original-title');
+  summary.classList.add('studio-service-summary');
   source.dataset.servicePicker = 'true';
   source.classList.add('studio-service-native');
   source.tabIndex = -1;
@@ -148,14 +149,6 @@
     if (invalid) trigger.setAttribute('aria-invalid', invalid); else trigger.removeAttribute('aria-invalid');
     const described = source.getAttribute('aria-describedby');
     if (described) trigger.setAttribute('aria-describedby', described); else trigger.removeAttribute('aria-describedby');
-    if (selected) {
-      if (control.parentElement !== summary) summary.insertBefore(control, summaryTitle);
-      home.classList.add('studio-service-field-away');
-    } else {
-      home.classList.remove('studio-service-field-away');
-      if (control.parentElement !== home) source.before(control);
-    }
-    control.classList.toggle('has-selection', selected);
     for (const row of rows) row.element.setAttribute('aria-selected', String(row.index === source.selectedIndex));
     if (source.disabled) close();
   }

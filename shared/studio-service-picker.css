@@ -1,18 +1,18 @@
 /* The same request palette variables cover monochrome, green and all six studies. */
 #studio-request-dialog .studio-service-native{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;padding:0!important;margin:-1px!important;border:0!important;clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;overflow:hidden!important;white-space:nowrap!important;pointer-events:none!important}
-#studio-request-dialog .studio-service-original-title,#studio-request-dialog .studio-service-field-away{display:none!important}
+#studio-request-dialog .studio-service-original-title{display:none!important}
 #studio-request-dialog .studio-service-control{grid-column:1/-1;min-width:0;width:100%}
-#studio-request-dialog .studio-service-control.has-selection{animation:studio-service-settle .22s ease-out both}
-@keyframes studio-service-settle{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-#studio-request-dialog .studio-service-trigger{display:flex;align-items:center;justify-content:space-between;gap:15px;width:100%;min-width:0;min-height:48px;margin:0;padding:11px 14px;border:1px solid var(--rq-line);border-radius:13px;background:var(--rq-surface);color:var(--rq-text);font:inherit;font-size:14px;line-height:1.5;text-align:left;cursor:pointer;box-shadow:inset 0 1px 0 #ffffff0d,0 3px 14px #00000008;transition:background .2s,border-color .2s,box-shadow .2s}
+#studio-request-dialog .studio-service-trigger{display:flex;align-items:center;justify-content:space-between;gap:15px;box-sizing:border-box;width:100%;min-width:0;height:48px;min-height:48px;margin:0;padding:11px 14px;border:1px solid var(--rq-line);border-radius:13px;background:var(--rq-surface);color:var(--rq-text);font:inherit;font-size:14px;line-height:1.5;text-align:left;cursor:pointer;box-shadow:inset 0 1px 0 #ffffff0d,0 3px 14px #00000008;transition:background .2s,border-color .2s,box-shadow .2s}
 #studio-request-dialog .studio-service-value{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #studio-request-dialog .studio-service-chevron{display:block;flex:none;width:8px;height:8px;margin:0 3px 4px 0;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;opacity:.75;transform:rotate(45deg);transition:transform .2s}
 #studio-request-dialog .is-open .studio-service-chevron{transform:translateY(3px) rotate(225deg)}
 #studio-request-dialog .studio-service-trigger:hover:not(:disabled),#studio-request-dialog .is-open .studio-service-trigger{border-color:var(--rq-accent);box-shadow:inset 0 1px 0 #ffffff12,0 5px 18px #00000012}
 #studio-request-dialog .studio-service-trigger:focus-visible{outline:2px solid var(--rq-accent);outline-offset:3px}
 #studio-request-dialog .studio-service-trigger:disabled{cursor:default;opacity:.6}
-#studio-request-dialog .has-selection .studio-service-trigger{min-height:44px;padding:5px 0;border-color:transparent;border-radius:7px;background:transparent;box-shadow:none;font-size:16px;font-weight:600;letter-spacing:-.02em}
-#studio-request-dialog .has-selection .studio-service-trigger:hover,#studio-request-dialog .has-selection.is-open .studio-service-trigger{border-color:transparent;box-shadow:none;color:var(--rq-accent)}
+#studio-request-dialog .rq-compact .rq-summary.studio-service-summary{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:0;margin:0 0 10px;border:0;border-radius:0;background:transparent;box-shadow:none}
+#studio-request-dialog .studio-service-summary .rq-price:empty{display:none}
+#studio-request-dialog .studio-service-summary :is(.rq-work,.rq-preset-note){flex-basis:100%;width:100%;min-width:0}
+#studio-request-dialog .rq-compact .studio-service-summary:not(:has(.rq-price:not(:empty),[data-rq-description]:not(:empty),.rq-work:not([hidden]),.rq-preset-note:not([hidden]))){display:none}
 #studio-request-dialog .studio-service-list{position:absolute;z-index:12;box-sizing:border-box;margin:0;padding:6px;max-height:clamp(180px,32vh,260px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--rq-line) transparent;border:1px solid var(--rq-line);border-radius:16px;background:var(--rq-surface);color:var(--rq-text);box-shadow:0 14px 35px #00000026,inset 0 1px 0 #ffffff12;isolation:isolate;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .18s ease,transform .18s cubic-bezier(.2,.7,.3,1)}
 #studio-request-dialog .studio-service-list[data-placement=above]{transform:translateY(4px)}
 #studio-request-dialog .studio-service-list.is-visible{opacity:1;transform:translateY(0);pointer-events:auto}
@@ -29,9 +29,8 @@
 #studio-request-dialog .studio-service-option[aria-disabled=true]{opacity:.5;cursor:default}
 @supports(background:color-mix(in srgb,white,transparent)){
   #studio-request-dialog .studio-service-trigger{background:linear-gradient(135deg,color-mix(in srgb,var(--rq-text) 4%,transparent),transparent 65%),color-mix(in srgb,var(--rq-surface) 84%,transparent);backdrop-filter:blur(12px) saturate(115%);-webkit-backdrop-filter:blur(12px) saturate(115%)}
-  #studio-request-dialog .has-selection .studio-service-trigger{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
   #studio-request-dialog .studio-service-list{background:linear-gradient(140deg,color-mix(in srgb,var(--rq-text) 5%,transparent),transparent 65%),color-mix(in srgb,var(--rq-surface) 94%,transparent);backdrop-filter:blur(20px) saturate(115%);-webkit-backdrop-filter:blur(20px) saturate(115%)}
   #studio-request-dialog .studio-service-option:hover,#studio-request-dialog .studio-service-option.is-active{background:color-mix(in srgb,var(--rq-accent) 11%,transparent)}
 }
-@media(max-width:760px){#studio-request-dialog .studio-service-trigger{min-height:48px;font-size:16px}#studio-request-dialog .has-selection .studio-service-trigger{font-size:16px;min-height:44px}#studio-request-dialog .studio-service-option-title{font-size:16px}#studio-request-dialog .studio-service-option{min-height:54px;padding:10px}#studio-request-dialog .studio-service-option-price{font-size:13px}}
-@media(prefers-reduced-motion:reduce){#studio-request-dialog .studio-service-control.has-selection{animation:none}#studio-request-dialog .studio-service-trigger,#studio-request-dialog .studio-service-chevron,#studio-request-dialog .studio-service-option,#studio-request-dialog .studio-service-list{transition:none}#studio-request-dialog .studio-service-list{transform:none}}
+@media(max-width:760px){#studio-request-dialog .studio-service-trigger{font-size:16px}#studio-request-dialog .studio-service-option-title{font-size:16px}#studio-request-dialog .studio-service-option{min-height:54px;padding:10px}#studio-request-dialog .studio-service-option-price{font-size:13px}}
+@media(prefers-reduced-motion:reduce){#studio-request-dialog .studio-service-trigger,#studio-request-dialog .studio-service-chevron,#studio-request-dialog .studio-service-option,#studio-request-dialog .studio-service-list{transition:none}#studio-request-dialog .studio-service-list{transform:none}}
