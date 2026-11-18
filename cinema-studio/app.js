@@ -529,3 +529,236 @@
  addEventListener('pageshow',()=>sync(true));
  header.dataset.studioMenuReady='true';sync(true);
 })();
+
+/* Only the chosen group is promoted above native lazy loading; no gallery-wide eager fetch. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const images=[...document.querySelectorAll('[data-studio-work-image]')];
+ const prepared=new WeakSet();
+ function ready(image){
+  if(!image.complete||!image.naturalWidth)return;
+  const source=image.currentSrc;
+  const finish=()=>{if(image.currentSrc===source&&image.complete&&image.naturalWidth){image.dataset.imageReady='true';image.style.backgroundImage='none'}};
+  if(image.decode)image.decode().then(finish,()=>{});else finish();
+ }
+ for(const image of images){
+  image.addEventListener('load',()=>ready(image));
+  image.addEventListener('error',()=>{
+   if(image.dataset.originalRetry)return;
+   image.dataset.originalRetry='true';
+   image.closest('picture')?.querySelector('source')?.remove();
+   image.src=image.dataset.originalSrc;
+  });
+  ready(image);
+ }
+ function promote(image,priority){
+  if(!image||prepared.has(image))return;
+  prepared.add(image);
+  image.fetchPriority=priority?'high':'auto';
+  image.loading='eager';
+  ready(image);
+ }
+ // Capture starts the selected small group before the existing filter reveals it.
+ document.addEventListener('click',event=>{
+  const control=event.target.closest('[data-direction],[data-work-filter]');
+  if(!control)return;
+  const category=control.dataset.direction||control.dataset.workFilter;
+  let count=0;
+  for(const card of document.querySelectorAll('[data-work-category]')){
+   if(card.dataset.workCategory===category)promote(card.querySelector('[data-studio-work-image]'),count++<2);
+  }
+ },true);
+ if('IntersectionObserver'in window){
+  const observer=new IntersectionObserver(entries=>{
+   for(const entry of entries){
+    if(!entry.isIntersecting||entry.target.closest('[hidden]'))continue;
+    promote(entry.target,false);observer.unobserve(entry.target);
+   }
+  },{rootMargin:'250px 0px'});
+  images.forEach(image=>observer.observe(image));
+  addEventListener('pagehide',()=>observer.disconnect(),{once:true});
+ }
+})();
+
+/* Temporary palette previews do not overwrite the visitor's saved salon/mono choice. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const html=document.documentElement;
+ const options=[
+  {id:'mono',title:'Монохром'},
+  {id:'salon',title:'Цвет салона'},
+  {id:'pearl',title:'Жемчужный'},
+  {id:'rose',title:'Пудровая роза'},
+  {id:'champagne',title:'Шампань'},
+  {id:'plum',title:'Сливовый'},
+  {id:'espresso',title:'Эспрессо'},
+  {id:'slate',title:'Морской графит'}
+ ];
+ const colors={mono:'#161616',salon:'#102b26',pearl:'#eaece8',rose:'#f5e9e9',champagne:'#ede3d2',plum:'#241d29',espresso:'#251d18',slate:'#19272e'};
+ let changeTimer=0;
+ function settle(){clearTimeout(changeTimer);html.classList.remove('studio-theme-shifting');}
+ function apply(id){
+  if(!options.some(option=>option.id===id))return false;
+  settle();
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&!document.hidden){
+   html.classList.add('studio-theme-shifting');
+   changeTimer=setTimeout(settle,280);
+  }
+  const custom=id!=='mono'&&id!=='salon';
+  if(custom){html.dataset.studioPreviewTheme=id;html.dataset.studioTheme='mono';}
+  else{delete html.dataset.studioPreviewTheme;html.dataset.studioTheme=id;}
+  document.querySelectorAll('[data-theme-choice]').forEach(button=>button.setAttribute('aria-pressed',String(!custom&&button.dataset.themeChoice===id)));
+  const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=colors[id];
+  dispatchEvent(new CustomEvent('kultura:themechange',{detail:{theme:id,preview:custom}}));
+  return true;
+ }
+ // Preserve the original two controls and their original storage behavior.
+ document.addEventListener('click',event=>{
+  if(!event.target.closest('[data-theme-choice]'))return;
+  delete html.dataset.studioPreviewTheme;
+  settle();
+ },true);
+ addEventListener('storage',event=>{if(event.key==='kultura-theme'){delete html.dataset.studioPreviewTheme;settle();}});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)settle();});
+ addEventListener('pagehide',settle);
+ window.KulturaStudioThemes={options,apply};
+})();
+
+/* Composition previews reuse the real hero, its single heading and existing actions. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const hero=document.querySelector('.studio .hero');
+ if(!hero)return;
+ const options=Object.freeze([
+  {id:'cover-left',title:'Кинопостер'},
+  {id:'cover-center',title:'В центре кадра'},
+  {id:'split',title:'Фото и текст'},
+  {id:'editorial',title:'Журнальная обложка'},
+  {id:'frame',title:'В рамке'},
+  {id:'portrait',title:'Вертикальный кадр'}
+ ].map(Object.freeze));
+ const motion=matchMedia('(prefers-reduced-motion: reduce)');
+ let animation=null;
+ function cancel(){animation?.cancel();animation=null;}
+ function apply(id){
+  if(id!=='original'&&!options.some(option=>option.id===id))return false;
+  cancel();
+  if(id==='original')delete document.body.dataset.studioHero;
+  else document.body.dataset.studioHero=id;
+  const rect=hero.getBoundingClientRect();
+  if(!motion.matches&&!document.hidden&&rect.bottom>0&&rect.top<innerHeight&&hero.animate){
+   animation=hero.animate([{opacity:.78},{opacity:1}],{duration:240,easing:'ease-out'});
+   animation.onfinish=()=>{animation=null;};
+  }
+  document.dispatchEvent(new CustomEvent('kultura:hero-preview',{detail:{id}}));
+  return true;
+ }
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel();});
+ motion.addEventListener?.('change',event=>{if(event.matches)cancel();});
+ addEventListener('pagehide',cancel);
+ window.KulturaStudioHeroes=Object.freeze({options,apply});
+})();
+
+/* Six finite intro studies. No media requests, simulated progress or blocking layer. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const options=[
+  {id:'split',title:'В стороны'},
+  {id:'lift',title:'Шторка вверх'},
+  {id:'iris',title:'Круговое раскрытие'},
+  {id:'shutters',title:'Вверх и вниз'},
+  {id:'signature',title:'Подпись'},
+  {id:'frame',title:'В рамке'}
+ ];
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const layer=document.createElement('div');
+ layer.className='studio-intro';layer.setAttribute('aria-hidden','true');layer.inert=true;
+ document.body.append(layer);
+ let animations=[],timer=0,sequence=0;
+ const word=()=>'<div class="studio-intro-word"><span>Культура</span><em>Стиля</em></div>';
+ function cancel(){
+  sequence++;clearTimeout(timer);timer=0;
+  animations.forEach(animation=>animation.cancel());animations=[];
+  layer.classList.remove('is-active');layer.replaceChildren();delete layer.dataset.intro;
+ }
+ function play(id){
+  cancel();
+  if(!options.some(option=>option.id===id)||reduced.matches||document.hidden||!Element.prototype.animate)return false;
+  const current=sequence;
+  layer.dataset.intro=id;
+  const split=id==='split'||id==='shutters';
+  layer.innerHTML=split?'<div class="studio-intro-pane">'+word()+'</div><div class="studio-intro-pane">'+word()+'</div>':'<div class="studio-intro-pane">'+word()+(id==='signature'?'<i class="studio-intro-line"></i>':id==='frame'?'<i class="studio-intro-frame"></i>':'')+'</div>';
+  layer.classList.add('is-active');
+  const animate=(element,frames,duration,delay=0)=>{
+   if(!element)return;
+   animations.push(element.animate(frames,{duration,delay,easing:'cubic-bezier(.22,.75,.2,1)',fill:'both'}));
+  };
+  const panels=layer.querySelectorAll('.studio-intro-pane'),letters=layer.querySelectorAll('.studio-intro-word');
+  if(id==='split'){
+   animate(panels[0],[{transform:'translateX(0)'},{transform:'translateX(-102%)'}],720,210);
+   animate(panels[1],[{transform:'translateX(0)'},{transform:'translateX(102%)'}],720,210);
+  }else if(id==='lift'){
+   animate(letters[0],[{opacity:0,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)',offset:.28},{opacity:1,transform:'translateY(0)',offset:.68},{opacity:0,transform:'translateY(-24px)'}],820);
+   animate(panels[0],[{transform:'translateY(0)'},{transform:'translateY(-102%)'}],740,260);
+  }else if(id==='iris'){
+   animate(letters[0],[{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.96)'}],400,150);
+   animate(panels[0],[{clipPath:'circle(150% at 50% 50%)'},{clipPath:'circle(0% at 50% 50%)'}],840,150);
+  }else if(id==='shutters'){
+   animate(panels[0],[{transform:'translateY(0)'},{transform:'translateY(-102%)'}],740,200);
+   animate(panels[1],[{transform:'translateY(0)'},{transform:'translateY(102%)'}],740,200);
+  }else if(id==='signature'){
+   animate(letters[0],[{opacity:0,transform:'translateY(9px)'},{opacity:1,transform:'translateY(0)',offset:.38},{opacity:1,transform:'translateY(0)',offset:.7},{opacity:0,transform:'translateY(-8px)'}],880);
+   animate(layer.querySelector('.studio-intro-line'),[{opacity:0,transform:'translateX(-50%) scaleX(0)'},{opacity:.55,transform:'translateX(-50%) scaleX(1)'}],570,100);
+   animate(panels[0],[{opacity:1},{opacity:0}],380,700);
+  }else{
+   animate(letters[0],[{opacity:0,transform:'scale(.97)'},{opacity:1,transform:'scale(1)',offset:.32},{opacity:1,transform:'scale(1)',offset:.62},{opacity:0,transform:'scale(1.025)'}],900);
+   animate(layer.querySelector('.studio-intro-frame'),[{opacity:.25,transform:'translate(-50%,-50%) scale(.92)'},{opacity:.45,transform:'translate(-50%,-50%) scale(1)',offset:.38},{opacity:0,transform:'translate(-50%,-50%) scale(1.6)'}],1050);
+   animate(panels[0],[{opacity:1},{opacity:0}],380,690);
+  }
+  // CSS also hides the layer if this callback cannot run; input remains available.
+  timer=setTimeout(()=>{if(sequence===current)cancel()},1180);
+  return true;
+ }
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel()});
+ addEventListener('pagehide',cancel);
+ reduced.addEventListener('change',()=>{if(reduced.matches)cancel()});
+ window.KulturaStudioIntros={options,play,cancel};
+})();
+
+/* Temporary independent design switches; only display choices enter the URL. */
+(() => {
+ 'use strict';
+ if(!document.body.classList.contains('studio'))return;
+ const themes=window.KulturaStudioThemes,intros=window.KulturaStudioIntros,heroes=window.KulturaStudioHeroes;
+ if(!themes||!intros||!heroes)return;
+ const url=new URL(location.href),reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const groups=[
+  {key:'palette',label:'Палитра',items:themes.options,apply:id=>themes.apply(id)},
+  {key:'hero',label:'Первый экран',items:[{id:'original',title:'Текущий'},...heroes.options],apply:id=>heroes.apply(id)},
+  {key:'intro',label:'Вступление',items:intros.options,apply:id=>intros.play(id)}
+ ];
+ const current={};
+ for(const group of groups){const requested=url.searchParams.get(group.key);current[group.key]=group.items.some(item=>item.id===requested)?requested:group.key==='palette'?(document.documentElement.dataset.studioTheme==='salon'?'salon':'mono'):group.items[0].id;}
+ themes.apply(current.palette);heroes.apply(current.hero);
+ const panel=document.createElement('details');panel.className='studio-preview';
+ panel.innerHTML='<summary>Варианты дизайна<span aria-hidden="true">+</span></summary><div class="studio-preview-body"><p>Временный просмотр оформления</p><div class="studio-preview-options"></div><button type="button" class="studio-preview-replay">Повторить вступление</button><span class="studio-preview-status" role="status" aria-live="polite"></span></div>';
+ const options=panel.querySelector('.studio-preview-options'),status=panel.querySelector('[role=status]');
+ const buttons=new Map();
+ function paint(group){const button=buttons.get(group.key),index=group.items.findIndex(item=>item.id===current[group.key]);button.querySelector('strong').textContent=group.items[index].title;button.querySelector('small').textContent=(index+1)+' / '+group.items.length;button.setAttribute('aria-label',group.label+': '+group.items[index].title+'. Следующий вариант');}
+ function remember(){const next=new URL(location.href);for(const group of groups)next.searchParams.set(group.key,current[group.key]);history.replaceState(history.state,'',next);}
+ for(const group of groups){
+  const row=document.createElement('div'),label=document.createElement('span'),button=document.createElement('button');
+  row.className='studio-preview-row';label.textContent=group.label;button.type='button';button.innerHTML='<strong></strong><small></small>';
+  button.addEventListener('click',()=>{const index=group.items.findIndex(item=>item.id===current[group.key]);current[group.key]=group.items[(index+1)%group.items.length].id;group.apply(current[group.key]);paint(group);remember();status.textContent=group.label+': '+group.items.find(item=>item.id===current[group.key]).title;if(group.key==='hero'){panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:reduced.matches?'auto':'smooth'});}});
+  row.append(label,button);options.append(row);buttons.set(group.key,button);paint(group);
+ }
+ panel.querySelector('.studio-preview-replay').addEventListener('click',()=>{panel.open=false;panel.querySelector('summary').focus({preventScroll:true});document.getElementById('top')?.scrollIntoView({block:'start',behavior:'instant'});intros.play(current.intro);});
+ document.addEventListener('click',event=>{if(panel.open&&!panel.contains(event.target))panel.open=false;const choice=event.target.closest('[data-theme-choice]');if(choice){current.palette=choice.dataset.themeChoice;paint(groups[0]);remember();}});
+ panel.addEventListener('keydown',event=>{if(event.key==='Escape'){panel.open=false;panel.querySelector('summary').focus();}});
+ document.body.append(panel);
+ intros.play(current.intro);
+})();

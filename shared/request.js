@@ -55,9 +55,50 @@
   const prep = data.preparation;
   preparation.querySelector('.rq-dialog-content').innerHTML = `<p class="rq-eyebrow">Перед визитом</p><h2>${esc(prep.title)}</h2><p>${esc(prep.intro)}</p><ul>${prep.bullets.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="rq-small">${esc(prep.footnote)} Это информационная памятка для демонстрации; перед запуском её согласует салон</p><p class="rq-small">Подробнее: <a href="${esc(prep.sources[0].url)}" target="_blank" rel="noopener">FDA о безопасности тату</a>, <a href="${esc(prep.sources[1].url)}" target="_blank" rel="noopener">рекомендации дерматологов AAD</a></p><button class="rq-primary" type="button" data-rq-understood>Понятно ${arrow}</button>`;
   preparation.querySelector('[data-rq-understood]').onclick = () => preparation.close();
+  const originalPreparation = preparation.querySelector('.rq-dialog-content').innerHTML;
+  let consentMode = '';
+  function temporaryTattoo(serviceEntry) {
+    if (!freeTattooPlace || category.id !== 'tattoo') return '';
+    if (serviceEntry?.canonicalId === 'tattoo:4') return 'jagua';
+    if (serviceEntry?.canonicalId === 'tattoo:5') return 'henna';
+    return '';
+  }
+  function updateTattooConsent(serviceEntry) {
+    if (!freeTattooPlace) return;
+    const technique = temporaryTattoo(serviceEntry);
+    const mode = category.id === 'tattoo' ? technique || 'tattoo' : '';
+    if (mode !== consentMode) { field('age').checked = false; field('read').checked = false; }
+    consentMode = mode;
+    const ageNeeded = Boolean(mode && !technique);
+    field('age').closest('label').hidden = !ageNeeded;
+    field('age').disabled = !ageNeeded;
+    field('age').required = ageNeeded;
+    field('age-error').hidden = !ageNeeded;
+    field('read').required = Boolean(mode);
+    if (!mode) return;
+    const checks = q('[data-rq-checks]');
+    checks.querySelector('legend').textContent = technique ? 'Перед временным рисунком' : 'Перед татуировкой';
+    field('read').nextElementSibling.innerHTML = 'Я прочитал(а) <button class="rq-textbtn" type="button" data-rq-preparation>' + (technique ? 'памятку о временном рисунке и возможной аллергии' : 'памятку перед татуировкой') + '</button> и до процедуры сообщу мастеру об известных аллергиях и противопоказаниях <span class="rq-required-mark">*</span>';
+    let allergyNote = checks.querySelector('[data-rq-allergy-note]');
+    if (!allergyNote) { allergyNote = document.createElement('p'); allergyNote.className = 'rq-small'; allergyNote.dataset.rqAllergyNote = ''; checks.querySelector('legend').after(allergyNote); }
+    allergyNote.textContent = 'В том числе об аллергии на апельсин и другие цитрусовые, красители, ароматизаторы, эфирные масла и компоненты средств. Состав уточните у мастера до нанесения.';
+    const content = preparation.querySelector('.rq-dialog-content');
+    if (technique) {
+      const title = technique === 'jagua' ? 'Перед рисунком джагуа-гелем' : 'Перед рисунком хной';
+      preparation.setAttribute('aria-label', title);
+      content.innerHTML = `<h2>${title}</h2><p>Это временный рисунок на коже. Натуральное происхождение средства не исключает аллергическую реакцию.</p><ul><li>Заранее сообщите мастеру об известных аллергиях — в том числе на апельсин и другие цитрусовые, хну, джагуа, красители, ароматизаторы и эфирные масла — и прошлых реакциях на средства.</li><li>Составы различаются. До нанесения уточните состав конкретного средства и обсудите известные ограничения с мастером.</li><li>Не наносите средство на повреждённую или раздражённую кожу. При прошлой реакции на средство сначала обсудите процедуру с врачом.</li></ul><p class="rq-small">Памятка не заменяет индивидуальную консультацию. Перед запуском текст и составы средств согласует салон.</p><p class="rq-small">Подробнее: <a href="https://www.fda.gov/cosmetics/cosmetic-ingredients/allergens-cosmetics" target="_blank" rel="noopener">FDA об аллергенах в косметике</a>, <a href="https://www.fda.gov/cosmetics/cosmetic-products/temporary-tattoos-hennamehndi-and-black-henna-fact-sheet" target="_blank" rel="noopener">о временных рисунках и хне</a></p><button class="rq-primary" type="button" data-rq-understood>Понятно ${arrow}</button>`;
+    } else {
+      preparation.setAttribute('aria-label', 'Памятка перед татуировкой');
+      content.innerHTML = originalPreparation;
+      const allergy = document.createElement('li');
+      allergy.textContent = 'До процедуры сообщите мастеру об известных аллергиях и прошлых реакциях на пигменты, антисептики, латекс и средства ухода. При аллергии на апельсин, другие цитрусовые или ароматизаторы уточните состав используемых средств.';
+      content.querySelector('ul').prepend(allergy);
+    }
+    content.querySelector('[data-rq-understood]').onclick = () => preparation.close();
+  }
   const review = makeDialog('Проверка демонстрационной заявки');
   function showDialog(dialog, origin) { lastDialogFocus=origin || document.activeElement; dialog.showModal(); }
-  q('[data-rq-preparation]').onclick = e => showDialog(preparation, e.currentTarget);
+  mount.addEventListener('click', e => { const button = e.target.closest('[data-rq-preparation]'); if (button) showDialog(preparation, button); });
   function setError(id, message) {
     const el = field(id); const output = field(id + '-error');
     if (output) output.textContent = message;
@@ -70,6 +111,7 @@
     q('[data-rq-title]').textContent = s?.title || (customIntent?'Хочу свой образ':'Выберите услугу');
     q('[data-rq-price]').textContent = s ? priceLabel(s) : customIntent?'Стоимость обсудим с мастером':'';
     q('[data-rq-description]').textContent = s?.description || '';
+    updateTattooConsent(s);
     bookingAdapter?.onServiceChange?.({category:category.id,service:s,index:service.value===''?null:Number(service.value),isCustom:customIntent,categoryServices:category.services});
   }
   function clearFiles() { fileEpoch++; files.forEach(f=>URL.revokeObjectURL(f.url));files=[];field('files').value='';renderFiles(); }
@@ -216,7 +258,7 @@
       const length=Number(field('length').value);if(!length||length<1||length>100)fail('length','Укажите примерную длину от 1 до 100 см');
       const width=field('width').value;if(width&&(Number(width)<1||Number(width)>100))fail('width','Укажите ширину от 1 до 100 см');
       if(!files.length&&!selectedWork)fail('files','Добавьте референс или выберите пример работы салона');
-      if(!field('age').checked)fail('age','Для этой демонстрационной заявки необходимо подтвердить 18+');
+      if(!temporaryTattoo(selected)&&!field('age').checked)fail('age','Для этой демонстрационной заявки необходимо подтвердить 18+');
       if(!field('read').checked)fail('read','Прочитайте памятку и отметьте ознакомление');
     }
     if(fileBusy){field('general-error').textContent='Подождите, фото ещё обрабатывается';field('general-error').focus();return;}
@@ -226,7 +268,7 @@
     details.push(['Имя',name],['Телефон',field('phone').value]);
     bookingAdapter?.extendDetails?.(details);
     if(date)details.push(['Пожелание по дате',new Date(date+'T12:00:00').toLocaleDateString('ru-RU')]);
-    if(category.id==='tattoo')details.push(['Место',!freeTattooPlace&&field('place').value==='Другая зона'?field('other').value.trim():field('place').value.trim()],['Размер',field('length').value+(field('width').value?' × '+field('width').value:'')+' см'],['Подтверждения','18+ · Памятка прочитана']);
+    if(category.id==='tattoo')details.push(['Место',!freeTattooPlace&&field('place').value==='Другая зона'?field('other').value.trim():field('place').value.trim()],['Размер',field('length').value+(field('width').value?' × '+field('width').value:'')+' см'],['Подтверждения',temporaryTattoo(selected)?'Памятка о временном рисунке прочитана · Об известных аллергиях сообщу мастеру':freeTattooPlace?'18+ · Памятка прочитана · Об известных аллергиях сообщу мастеру':'18+ · Памятка прочитана']);
     if(category.id==='color'&&field('color').value.trim())details.push(['Окрашивание',field('color').value.trim()]);
     if(category.id==='nails'&&field('nails').value.trim())details.push(['Маникюр',field('nails').value.trim()]);
     if(selectedWork)details.push(['Пример салона',selectedWork.label]);

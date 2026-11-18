@@ -208,6 +208,136 @@
       "sha256": "11c6e28abcca0feca4c5a756dee251ceb167f484e0853628ae5d9c4a8750df35"
     },
     {
+      "path": "assets/studio-work-media/barber-cut-large.webp",
+      "bytes": 48020,
+      "sha256": "8bc295f34a83070b915f8f6821fa961212cedc53e84941510bd9e29b2a79d032"
+    },
+    {
+      "path": "assets/studio-work-media/barber-cut-small.webp",
+      "bytes": 17722,
+      "sha256": "3e50abd32752dda37231755ffcd053a01740944cd7204dd2e257ba754b645f26"
+    },
+    {
+      "path": "assets/studio-work-media/barber-process-large.webp",
+      "bytes": 29836,
+      "sha256": "965f7da2c0a9da52e4d3a1de3a394c70f428a04acce4aa8240e86ac795dac231"
+    },
+    {
+      "path": "assets/studio-work-media/barber-process-small.webp",
+      "bytes": 7672,
+      "sha256": "266bf59626ea8ca8efb121b737ed1a984feffd4badeb6f3100d00f10cf3f9816"
+    },
+    {
+      "path": "assets/studio-work-media/brows-large.webp",
+      "bytes": 32370,
+      "sha256": "85acf653cd92650eae3fe756c24543ea778f713b301156ad98c4105f6ba869cc"
+    },
+    {
+      "path": "assets/studio-work-media/brows-small.webp",
+      "bytes": 7312,
+      "sha256": "8a1ccd260119a604fa82865290784b83ee27b0543f162deefff0815cc4c40728"
+    },
+    {
+      "path": "assets/studio-work-media/hair-blonde-large.webp",
+      "bytes": 42994,
+      "sha256": "6684238548470fa13a662f54eb7faf0cb4697b6818bde268dbbc97f003fafc29"
+    },
+    {
+      "path": "assets/studio-work-media/hair-blonde-small.webp",
+      "bytes": 22678,
+      "sha256": "acfa0f149aa2a605ec6aa7573566b0116706b78cb82c366438ac811e4a16d76f"
+    },
+    {
+      "path": "assets/studio-work-media/hair-bob-large.webp",
+      "bytes": 57162,
+      "sha256": "3223844ec9452eb5a75658f64fa167d8a264ba0d12f7a323f253ce56d4ded9a6"
+    },
+    {
+      "path": "assets/studio-work-media/hair-bob-small.webp",
+      "bytes": 18890,
+      "sha256": "4e92e35ef11a68823e979be056105e8eeae3629ed34a9c12c3994a4bb5d64b31"
+    },
+    {
+      "path": "assets/studio-work-media/hair-caramel-large.webp",
+      "bytes": 73254,
+      "sha256": "1fe243e4c53d395e486cb30f65c1be157975304fb55d1026760d5d3bae4279fe"
+    },
+    {
+      "path": "assets/studio-work-media/hair-caramel-small.webp",
+      "bytes": 21848,
+      "sha256": "1f4ce09998e076dca75491956467b9cff854f9f366d242d016e36b3a8d083eeb"
+    },
+    {
+      "path": "assets/studio-work-media/hair-red-large.webp",
+      "bytes": 81046,
+      "sha256": "2f836a4005911f384bc849c1e96daf8b4eb7457bf9e9b3173d130ce1e2bc00f4"
+    },
+    {
+      "path": "assets/studio-work-media/hair-red-small.webp",
+      "bytes": 12498,
+      "sha256": "371302c80f2f9b0b310abd8ef447b4cd36af49b94bf41f82dc97ec21c4263f38"
+    },
+    {
+      "path": "assets/studio-work-media/lashes-large.webp",
+      "bytes": 39462,
+      "sha256": "aa1b12ab0f7a23d2aa4dd25e13befb67c08206a48be31772adc65ab059012444"
+    },
+    {
+      "path": "assets/studio-work-media/lashes-small.webp",
+      "bytes": 13738,
+      "sha256": "1552d68b2201a2068ae1e9234d1851933bdb09b5d73e58fd3f06298bd44cc388"
+    },
+    {
+      "path": "assets/studio-work-media/nails-art-large.webp",
+      "bytes": 28812,
+      "sha256": "6b51f72d736ffe750ac5314440dd335a70fcdf0cd519d4423eb70b3b2aee9e84"
+    },
+    {
+      "path": "assets/studio-work-media/nails-art-small.webp",
+      "bytes": 8936,
+      "sha256": "91d9f4648e8d71241e2d15d9c4a25d3234662aa4344057a62bff048267193c11"
+    },
+    {
+      "path": "assets/studio-work-media/nails-nude-large.webp",
+      "bytes": 14790,
+      "sha256": "139c26fb039efba2f73f21a1fcc230caad969a7a095fec6cd4fe11ef9cfa8eea"
+    },
+    {
+      "path": "assets/studio-work-media/nails-nude-small.webp",
+      "bytes": 5860,
+      "sha256": "64931b043a0fa5ce27c8c5e77b8a6bc809f043a44a1f0d3480fa7f8611a68ba7"
+    },
+    {
+      "path": "assets/studio-work-media/nails-red-large.webp",
+      "bytes": 13454,
+      "sha256": "6d02f97598ec565df948b2b2aeaba103b7d9e5c034d77afeeb041a8024595bee"
+    },
+    {
+      "path": "assets/studio-work-media/nails-red-small.webp",
+      "bytes": 5698,
+      "sha256": "93e73000ecbfde194210af9ea60531d41014eb475a29f3f135ea7beca42a1681"
+    },
+    {
+      "path": "assets/studio-work-media/tattoo-back-large.webp",
+      "bytes": 34998,
+      "sha256": "213fea1a3933b0615dca239c0be6f939c366df0532ec66ecb7be085bb9c0febf"
+    },
+    {
+      "path": "assets/studio-work-media/tattoo-back-small.webp",
+      "bytes": 12706,
+      "sha256": "a6b7a5833010c7a4fc34a556fc3f698fae95437ac1862cbbfc97e69d18977004"
+    },
+    {
+      "path": "assets/studio-work-media/tattoo-fine-large.webp",
+      "bytes": 18538,
+      "sha256": "b4dc577f5fd36cd66ec900cf2108935960d30a5f8bc60392e3c22f57812271ac"
+    },
+    {
+      "path": "assets/studio-work-media/tattoo-fine-small.webp",
+      "bytes": 5948,
+      "sha256": "4c0c64ce4db08bb5e290eee4becd954552e294143050edc08af2c40b8eb8307e"
+    },
+    {
       "path": "assets/tattoo-back.jpg",
       "bytes": 70853,
       "sha256": "4681e359248120562d226670da9ecbee3269e36f1289c655bb17d4138aa4656e"
@@ -219,18 +349,18 @@
     },
     {
       "path": "cinema-studio/app.js",
-      "bytes": 43695,
-      "sha256": "efb0f695ec10baf03da36d7612cc0498fc14276c7a0708966599f02f4d977e82"
+      "bytes": 58005,
+      "sha256": "06db4e8bb993167ddfa08dfa09d52a6f11f1bc4c0c97c7f2b7d4ec7585d9118d"
     },
     {
       "path": "cinema-studio/index.html",
-      "bytes": 63771,
-      "sha256": "d6fdf7bd850ec2ca77455639c549cac26c983547ea2f3b8ddd0d4c7d4d5f9c6b"
+      "bytes": 77657,
+      "sha256": "321b0a68ad531ff1afe7e12314a244544745318d213178894802da944c29a4b3"
     },
     {
       "path": "cinema-studio/style.css",
-      "bytes": 109879,
-      "sha256": "5eec2c09b1ffa3c3b804d33b1aaa5af8a2d3496561e7e1fb0db6f87161c644b5"
+      "bytes": 143904,
+      "sha256": "4f1365d7deac7f6d9f164483d7cdb7c7d6695c46cb8cfd4efb6ebacaafc85d63"
     },
     {
       "path": "index.html",
@@ -244,8 +374,8 @@
     },
     {
       "path": "shared/request.js",
-      "bytes": 31133,
-      "sha256": "13fc3e91e651cccc99677d8e8a2edffe11f0306c378de4a8497c1edb42de27fd"
+      "bytes": 36691,
+      "sha256": "7c8314504aa678e33b018e3ac7bee3edfdd8a1d0943887487dc534c8ef5630c5"
     },
     {
       "path": "shared/studio-booking.css",
